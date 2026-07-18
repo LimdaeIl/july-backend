@@ -1,12 +1,15 @@
 package com.backend.july.auth.presentation;
 
 import com.backend.july.auth.application.RefreshTokenCookieProvider;
+import com.backend.july.auth.application.ReissueTokenService;
 import com.backend.july.auth.application.SignInService;
 import com.backend.july.auth.application.SignUpService;
 import com.backend.july.auth.presentation.dto.request.SignInRequest;
 import com.backend.july.auth.presentation.dto.request.SignUpRequest;
+import com.backend.july.auth.presentation.dto.response.ReissueResponse;
 import com.backend.july.auth.presentation.dto.response.SignInResponse;
 import com.backend.july.auth.presentation.dto.response.SignUpResponse;
+import com.backend.july.auth.presentation.dto.result.ReissueTokenResult;
 import com.backend.july.auth.presentation.dto.result.SignInResult;
 import com.backend.july.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +31,7 @@ public class AuthController {
     private final SignUpService signUpService;
     private final SignInService signInService;
     private final RefreshTokenCookieProvider refreshTokenCookieProvider;
+    private final ReissueTokenService reissueTokenService;
 
 
     @PostMapping("/sign-up")
@@ -66,4 +71,30 @@ public class AuthController {
                         ))
                 );
     }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<ApiResponse<ReissueResponse>> reissue(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse servletResponse
+    ) {
+        ReissueTokenResult reissueTokenResult = reissueTokenService.reissue(refreshToken);
+
+        refreshTokenCookieProvider.addRefreshTokenCookie(
+                servletResponse,
+                reissueTokenResult.newRefreshToken(),
+                reissueTokenResult.refreshTokenRemainingSecond()
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "토큰 재발급: 토큰 재발급에 성공했습니다.",
+                        ReissueResponse.of(
+                                reissueTokenResult.id(),
+                                reissueTokenResult.newAccessToken())
+                )
+        );
+    }
+
+    
 }
+
