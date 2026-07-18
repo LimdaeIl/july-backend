@@ -17,7 +17,7 @@ public class Email {
     private String email;
 
     private Email(String email) {
-        validateEmail(email);
+        validate(email, "Email");
 
         this.email = email;
     }
@@ -26,9 +26,9 @@ public class Email {
         return new Email(email);
     }
 
-    private void validateEmail(String email) {
-        if (email == null || email.isEmpty()) {
-            throw new IllegalArgumentException("Email cannot be null or empty");
+    private void validate(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " cannot be null or empty");
         }
     }
 }

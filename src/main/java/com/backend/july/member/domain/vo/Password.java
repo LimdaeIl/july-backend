@@ -16,7 +16,7 @@ public class Password {
 
 
     private Password(String password) {
-        validatePassword(password);
+        validate(password, "Password");
 
         this.password = password;
     }
@@ -25,9 +25,10 @@ public class Password {
         return new Password(password);
     }
 
-    private void validatePassword(String password) {
-        if (password == null || password.isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be null or empty");
+
+    private void validate(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " cannot be null or empty");
         }
     }
 

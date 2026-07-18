@@ -1,19 +1,11 @@
 package com.backend.july.member.domain;
 
-import com.backend.july.member.domain.vo.Address;
-import com.backend.july.member.domain.vo.Email;
-import com.backend.july.member.domain.vo.Name;
-import com.backend.july.member.domain.vo.Password;
-import com.backend.july.member.domain.vo.Phone;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.backend.july.member.domain.vo.*;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.util.Objects;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -41,15 +33,14 @@ public class Member {
     private Address address;
 
     private Member(Email email, Password password, Name name, Phone phone, Address address) {
-        this.email = email;
-        this.password = password;
-        this.name = name;
-        this.phone = phone;
-        this.address = address;
+        this.email = Objects.requireNonNull(email, "이메일은 필수입니다.");
+        this.password = Objects.requireNonNull(password, "비밀번호는 필수입니다.");
+        this.name = Objects.requireNonNull(name, "이름은 필수입니다.");
+        this.phone = Objects.requireNonNull(phone, "전화번호는 필수입니다.");
+        this.address = Objects.requireNonNull(address, "주소는 필수입니다.");
     }
 
-    public static Member create(Email email, Password password, Name name, Phone phone,
-            Address address) {
+    public static Member create(Email email, Password password, Name name, Phone phone, Address address) {
         return new Member(email, password, name, phone, address);
     }
 }
