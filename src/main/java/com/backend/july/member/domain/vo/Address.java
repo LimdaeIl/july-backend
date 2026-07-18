@@ -1,5 +1,7 @@
 package com.backend.july.member.domain.vo;
 
+import com.backend.july.member.exception.MemberErrorCode;
+import com.backend.july.member.exception.MemberException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -43,7 +45,7 @@ public class Address {
 
     private void validate(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " cannot be null or empty");
+            throw new MemberException(MemberErrorCode.VALIDATE_FIELD, fieldName);
         }
     }
 }
