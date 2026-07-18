@@ -1,4 +1,4 @@
-package com.backend.july.member.domain.vo;
+package com.backend.july.member.domain;
 
 import com.backend.july.member.exception.MemberErrorCode;
 import com.backend.july.member.exception.MemberException;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EqualsAndHashCode // 값 비교를 위해 필수
+@EqualsAndHashCode
 @Embeddable
 public class Address {
 
