@@ -3,14 +3,13 @@ package com.backend.july.member.domain.vo;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EqualsAndHashCode
+@EqualsAndHashCode // 값 비교를 위해 필수
 @Embeddable
 public class Address {
 
@@ -27,10 +26,10 @@ public class Address {
     private String country;
 
     private Address(String city, String state, String zip, String country) {
-        validateCity(city);
-        validateState(state);
-        validateZip(zip);
-        validateCountry(country);
+        validate(city, "City");
+        validate(state, "State");
+        validate(zip, "Zip");
+        validate(country, "Country");
 
         this.city = city;
         this.state = state;
@@ -39,30 +38,13 @@ public class Address {
     }
 
     public static Address of(String city, String state, String zip, String country) {
-        return new  Address(city, state, zip, country);
+        return new Address(city, state, zip, country);
     }
 
-    private void validateCity(String city) {
-        if (city == null || city.isEmpty()) {
-            throw new IllegalArgumentException("City cannot be null or empty");
-        }
-    }
-
-    private void validateState(String state) {
-        if (state == null || state.isEmpty()) {
-            throw new IllegalArgumentException("State cannot be null or empty");
-        }
-    }
-
-    private void validateZip(String zip) {
-        if (zip == null || zip.isEmpty()) {
-            throw new IllegalArgumentException("Zip cannot be null or empty");
-        }
-    }
-
-    private void validateCountry(String country) {
-        if (country == null || country.isEmpty()) {
-            throw new IllegalArgumentException("Country cannot be null or empty");
+    private void validate(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " cannot be null or empty");
         }
     }
 }
+

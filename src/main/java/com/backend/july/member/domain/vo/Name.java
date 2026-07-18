@@ -17,7 +17,7 @@ public class Name {
     private String name;
 
     private Name(String name) {
-        validateName(name);
+        validate(name, "Name");
 
         this.name = name;
     }
@@ -26,9 +26,10 @@ public class Name {
         return new Name(name);
     }
 
-    private void validateName(String name) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("name is null or empty");
+
+    private void validate(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " cannot be null or empty");
         }
     }
 
