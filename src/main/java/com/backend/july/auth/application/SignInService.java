@@ -33,19 +33,14 @@ public class SignInService {
                 .orElseThrow(
                         () -> new AuthException(AuthErrorCode.INVALID_SIGN_IN));
 
-        if (!member.getPassword().equals(passwordEncoder.encode(request.password()))) {
+        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new AuthException(AuthErrorCode.INVALID_SIGN_IN);
         }
 
+        String accessToken = jwtTokenProvider.createAccessToken(member.getId(),
+                member.getRole().name());
 
-
-        String accessToken = jwtTokenProvider.createAccessToken(
-                member.getId(),
-                member.getRole().name()
-        );
-
-        String refreshToken =
-                jwtTokenProvider.createRefreshToken(member.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         long refreshTokenRemainingMillis =
                 jwtTokenProvider.getRefreshTokenRemainingMillis(refreshToken);

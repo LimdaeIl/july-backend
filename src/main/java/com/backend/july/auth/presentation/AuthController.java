@@ -3,6 +3,7 @@ package com.backend.july.auth.presentation;
 import com.backend.july.auth.application.RefreshTokenCookieProvider;
 import com.backend.july.auth.application.ReissueTokenService;
 import com.backend.july.auth.application.SignInService;
+import com.backend.july.auth.application.SignOutService;
 import com.backend.july.auth.application.SignUpService;
 import com.backend.july.auth.presentation.dto.request.SignInRequest;
 import com.backend.july.auth.presentation.dto.request.SignUpRequest;
@@ -32,6 +33,8 @@ public class AuthController {
     private final SignInService signInService;
     private final RefreshTokenCookieProvider refreshTokenCookieProvider;
     private final ReissueTokenService reissueTokenService;
+    private final SignOutService signOutService;
+
 
 
     @PostMapping("/sign-up")
@@ -95,6 +98,16 @@ public class AuthController {
         );
     }
 
+    @PostMapping("/sign-out")
+    public ResponseEntity<Void> signOut(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response
+    ) {
+        signOutService.signOut(refreshToken);
+        refreshTokenCookieProvider.removeRefreshTokenCookie(response);
+
+        return ResponseEntity.noContent().build();
+    }
     
 }
 
