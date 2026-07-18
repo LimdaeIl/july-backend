@@ -1,11 +1,12 @@
 package com.backend.july.member.domain;
 
-import com.backend.july.member.domain.vo.*;
+import com.backend.july.member.exception.MemberErrorCode;
+import com.backend.july.member.exception.MemberException;
 import jakarta.persistence.*;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.util.Objects;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -17,31 +18,37 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Embedded
-    private Email email;
+    @Column(name = "email", nullable = false, unique = true, length = 100)
+    private String email;
 
-    @Embedded
-    private Password password;
+    @Column(name = "password", nullable = false, length = 512)
+    private String password;
 
-    @Embedded
-    private Name name;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
-    @Embedded
-    private Phone phone;
+    @Column(name = "phone", nullable = false, length = 20)
+    private String phone;
 
     @Embedded
     private Address address;
 
-    private Member(Email email, Password password, Name name, Phone phone, Address address) {
-        this.email = Objects.requireNonNull(email, "이메일은 필수입니다.");
-        this.password = Objects.requireNonNull(password, "비밀번호는 필수입니다.");
-        this.name = Objects.requireNonNull(name, "이름은 필수입니다.");
-        this.phone = Objects.requireNonNull(phone, "전화번호는 필수입니다.");
-        this.address = Objects.requireNonNull(address, "주소는 필수입니다.");
+    private Member(String email, String password, String name, String phone, Address address) {
+        this.email = validate(email, "이메일");
+        this.password = validate(password, "비밀번호");
+        this.name = validate(name, "이름");
+        this.phone = validate(phone, "전화번호");
+        this.address = Objects.requireNonNull(address, "주소는 null일 수 없습니다.");
     }
 
-    public static Member create(Email email, Password password, Name name, Phone phone, Address address) {
+    public static Member create(String email, String password, String name, String phone, Address address) {
         return new Member(email, password, name, phone, address);
     }
-}
 
+    private String validate(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new MemberException(MemberErrorCode.VALIDATE_FIELD, fieldName);
+        }
+        return value;
+    }
+}
