@@ -10,6 +10,7 @@ import com.backend.july.member.exception.MemberErrorCode;
 import com.backend.july.member.exception.MemberException;
 import com.backend.july.member.infrastructure.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SignUpService {
 
     private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
@@ -31,7 +33,7 @@ public class SignUpService {
 
         Member member = Member.create(
                 request.email(),
-                request.password(),
+                passwordEncoder.encode(request.password()),
                 request.name(),
                 request.phone(),
                 Address.of(
