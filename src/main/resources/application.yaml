@@ -1,3 +1,29 @@
+server:
+  port: 8080
+  shutdown: graceful
+
 spring:
   application:
-    name: july
+    name: july-app
+
+  profiles:
+    active: dev
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: true
+    doc-expansion: none
+    persist-authorization: true
+
+  packages-to-scan: com.backend.july
+  paths-to-match:
+    - /api/**
