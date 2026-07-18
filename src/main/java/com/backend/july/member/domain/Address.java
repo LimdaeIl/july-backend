@@ -24,23 +24,17 @@ public class Address {
     @Column(name = "zip", nullable = false, length = 100)
     private String zip;
 
-    @Column(name = "country", nullable = false, length = 100)
-    private String country;
-
-    private Address(String city, String state, String zip, String country) {
+    private Address(String city, String state, String zip) {
         validate(city, "City");
         validate(state, "State");
         validate(zip, "Zip");
-        validate(country, "Country");
 
         this.city = city;
         this.state = state;
-        this.zip = zip;
-        this.country = country;
-    }
+        this.zip = zip;}
 
-    public static Address of(String city, String state, String zip, String country) {
-        return new Address(city, state, zip, country);
+    public static Address of(String city, String state, String zip) {
+        return new Address(city, state, zip);
     }
 
     private void validate(String value, String fieldName) {
