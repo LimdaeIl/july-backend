@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 질문
+    url: https://github.com/LimdaeIl/hall-backend/discussions
+    about: 방문 감사합니다! 무엇이든 질문을 주셔도 됩니다🙂 언제든 편하게 Discussion을 이용해주세요.
