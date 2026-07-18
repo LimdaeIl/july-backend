@@ -1,5 +1,7 @@
 package com.backend.july.auth.application;
 
+import com.backend.july.auth.exception.AuthErrorCode;
+import com.backend.july.auth.exception.AuthException;
 import com.backend.july.auth.presentation.dto.request.SignUpRequest;
 import com.backend.july.auth.presentation.dto.response.SignUpResponse;
 import com.backend.july.member.domain.Address;
@@ -20,11 +22,11 @@ public class SignUpService {
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
         if (memberRepository.existsByEmail(request.email())) {
-            throw new MemberException(MemberErrorCode.MEMBER_ALREADY_EXISTS);
+            throw new AuthException(AuthErrorCode.MEMBER_ALREADY_EXISTS, request.email());
         }
 
         if (memberRepository.existsByPhone(request.phone())) {
-            throw new MemberException(MemberErrorCode.MEMBER_PHONE_ALREADY_EXISTS);
+            throw new AuthException(AuthErrorCode.MEMBER_PHONE_ALREADY_EXISTS, request.phone());
         }
 
         Member member = Member.create(
