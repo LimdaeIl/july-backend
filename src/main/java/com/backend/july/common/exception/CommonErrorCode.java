@@ -18,7 +18,8 @@ public enum CommonErrorCode implements ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 요청을 수행할 권한이 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
-    DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "데이터 무결성 제약 조건 위반으로 인해 요청을 처리할 수 없습니다.");
+    DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "데이터 무결성 제약 조건 위반으로 인해 요청을 처리할 수 없습니다."),
+    UNAUTHENTICATED_MEMBER(HttpStatus.UNAUTHORIZED, "%s는 인증되지 않은 사용자입니다.");
 
     private final HttpStatus status;
     private final String message;
