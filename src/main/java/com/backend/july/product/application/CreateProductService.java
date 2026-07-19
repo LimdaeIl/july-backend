@@ -1,7 +1,7 @@
 package com.backend.july.product.application;
 
 import com.backend.july.product.domain.Product;
-import com.backend.july.product.infrastructure.ProductRepository;
+import com.backend.july.product.domain.ProductRepository;
 import com.backend.july.product.presentation.dto.request.CreateProductRequest;
 import com.backend.july.product.presentation.dto.response.CreateProductResponse;
 import lombok.RequiredArgsConstructor;
