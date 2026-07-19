@@ -1,0 +1,46 @@
+### 회원가입
+# @name signUp
+POST http://localhost:8080/api/v1/auth/sign-up
+Content-Type: application/json
+
+{
+  "email": "july{{$timestamp}}@example.com",
+  "password": "Password123!",
+  "name": "테스트회원",
+  "phone": "01012345678",
+  "address": {
+    "city": "서울특별시",
+    "state": "강남구",
+    "zip": "06236",
+    "country": "대한민국"
+  }
+}
+
+> {%
+  client.global.set("memberEmail", response.body.data.email);
+%}
+
+### 로그인
+# @name signIn
+POST http://localhost:8080/api/v1/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "{{memberEmail}}",
+  "password": "Password123!"
+}
+
+> {%
+  client.global.set("adminAccessToken", response.body.data.accessToken);
+%}
+
+### 상품 생성
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "한정판 기계식 키보드",
+  "price": 129000
+}
+

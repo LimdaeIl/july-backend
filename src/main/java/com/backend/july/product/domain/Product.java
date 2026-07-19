@@ -22,30 +22,28 @@ import lombok.NoArgsConstructor;
 @Entity
 public class Product extends BaseAuditEntity {
 
-    private static final int MAX_NAME_LENGTH = 100;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = MAX_NAME_LENGTH)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "price", nullable = false, precision = 19, scale = 2)
+    @Column(name = "price", nullable = false, precision = 19, scale = 0)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false)
     private ProductStatus status;
 
-    private Product(String name, BigDecimal price, ProductStatus status) {
+    private Product(String name, BigDecimal price) {
         this.name = validateName(name);
         this.price = validatePrice(price);
-        this.status = validateStatus(status);
+        this.status = ProductStatus.ON_SALE;
     }
 
-    public static Product create(String name, BigDecimal price, ProductStatus status) {
-        return new Product(name, price, status);
+    public static Product create(String name, BigDecimal price) {
+        return new Product(name, price);
     }
 
     private String validateName(String name) {
@@ -55,7 +53,7 @@ public class Product extends BaseAuditEntity {
 
         String trimmedName = name.trim();
 
-        if (trimmedName.length() > MAX_NAME_LENGTH) {
+        if (trimmedName.length() > 100) {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "name");
         }
 
@@ -63,22 +61,14 @@ public class Product extends BaseAuditEntity {
     }
 
     private BigDecimal validatePrice(BigDecimal price) {
-        if (price == null) {
+        if (price == null || price.signum() <= 0) {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "price");
         }
 
-        if (price.signum() < 0) {
+        if (price.scale() > 0) {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "price");
         }
 
         return price;
-    }
-
-    private ProductStatus validateStatus(ProductStatus status) {
-        if (status == null) {
-            throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "status");
-        }
-
-        return status;
     }
 }
