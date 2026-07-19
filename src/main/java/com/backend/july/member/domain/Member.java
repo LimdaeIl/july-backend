@@ -1,5 +1,6 @@
 package com.backend.july.member.domain;
 
+import com.backend.july.common.audit.BaseAuditEntity;
 import com.backend.july.member.exception.MemberErrorCode;
 import com.backend.july.member.exception.MemberException;
 import jakarta.persistence.Column;
@@ -27,7 +28,7 @@ import lombok.NoArgsConstructor;
         }
 )
 @Entity
-public class Member {
+public class Member extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
