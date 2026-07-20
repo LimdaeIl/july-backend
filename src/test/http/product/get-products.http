@@ -36,6 +36,7 @@ Content-Type: application/json
 %}
 
 ### 상품 생성 1
+# @name createProduct1
 POST http://localhost:8080/api/v1/admin/products
 Content-Type: application/json
 Authorization: Bearer {{adminAccessToken}}
@@ -46,6 +47,7 @@ Authorization: Bearer {{adminAccessToken}}
 }
 
 ### 상품 생성 2
+# @name createProduct2
 POST http://localhost:8080/api/v1/admin/products
 Content-Type: application/json
 Authorization: Bearer {{adminAccessToken}}
@@ -56,6 +58,7 @@ Authorization: Bearer {{adminAccessToken}}
 }
 
 ### 상품 생성 3
+# @name createProduct3
 POST http://localhost:8080/api/v1/admin/products
 Content-Type: application/json
 Authorization: Bearer {{adminAccessToken}}
@@ -65,30 +68,277 @@ Authorization: Bearer {{adminAccessToken}}
   "price": 249000
 }
 
-### 상품 목록 조회 - 최신순
-GET http://localhost:8080/api/v1/products?sortType=LATEST&page=0&size=20
+### 상품 생성 4
+# @name createProduct4
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
 
-### 상품 목록 조회 - 가격 낮은 순
-GET http://localhost:8080/api/v1/products?sortType=PRICE_LOW&page=0&size=20
+{
+  "name": "저소음 적축 키보드",
+  "price": 89000
+}
 
-### 상품 목록 조회 - 가격 높은 순
-GET http://localhost:8080/api/v1/products?sortType=PRICE_HIGH&page=0&size=20
+### 상품 생성 5
+# @name createProduct5
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
 
-### 판매자 상품 조회 - 최신순
-GET http://localhost:8080/api/v1/products?sellerId={{sellerId}}&sortType=LATEST&page=0&size=20
+{
+  "name": "고해상도 웹캠",
+  "price": 79000
+}
 
-### 판매자 상품 조회 - 가격 낮은 순
-GET http://localhost:8080/api/v1/products?sellerId={{sellerId}}&sortType=PRICE_LOW&page=0&size=20
+### 상품 생성 6
+# @name createProduct6
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
 
-### 판매자 상품 조회 - 가격 높은 순
-GET http://localhost:8080/api/v1/products?sellerId={{sellerId}}&sortType=PRICE_HIGH&page=0&size=20
+{
+  "name": "27인치 게이밍 모니터",
+  "price": 329000
+}
 
-### 잘못된 정렬 타입
-GET http://localhost:8080/api/v1/products?sortType=INVALID&page=0&size=20
+###############################################################################
+# 오프셋 페이징
+###############################################################################
 
-### 잘못된 페이지
-GET http://localhost:8080/api/v1/products?page=-1&size=20
+### 오프셋 페이징 - 기본 최신순
+# @name getProductsPageDefault
+GET http://localhost:8080/api/v1/products/page?page=0&size=20
 
-### 잘못된 페이지 크기
-GET http://localhost:8080/api/v1/products?page=0&size=101
+### 오프셋 페이징 - 최신순
+# @name getProductsPageLatest
+GET http://localhost:8080/api/v1/products/page?sortType=LATEST&page=0&size=20
+
+### 오프셋 페이징 - 가격 낮은 순
+# @name getProductsPagePriceLow
+GET http://localhost:8080/api/v1/products/page?sortType=PRICE_LOW&page=0&size=20
+
+### 오프셋 페이징 - 가격 높은 순
+# @name getProductsPagePriceHigh
+GET http://localhost:8080/api/v1/products/page?sortType=PRICE_HIGH&page=0&size=20
+
+### 오프셋 페이징 - 판매자 기준 최신순
+# @name getProductsPageBySellerLatest
+GET http://localhost:8080/api/v1/products/page?sellerId={{sellerId}}&sortType=LATEST&page=0&size=20
+
+### 오프셋 페이징 - 판매자 기준 가격 낮은 순
+# @name getProductsPageBySellerPriceLow
+GET http://localhost:8080/api/v1/products/page?sellerId={{sellerId}}&sortType=PRICE_LOW&page=0&size=20
+
+### 오프셋 페이징 - 판매자 기준 가격 높은 순
+# @name getProductsPageBySellerPriceHigh
+GET http://localhost:8080/api/v1/products/page?sellerId={{sellerId}}&sortType=PRICE_HIGH&page=0&size=20
+
+### 오프셋 페이징 실패 - 잘못된 정렬 타입
+# @name getProductsPageInvalidSortType
+GET http://localhost:8080/api/v1/products/page?sortType=INVALID&page=0&size=20
+
+### 오프셋 페이징 실패 - 음수 페이지
+# @name getProductsPageInvalidPage
+GET http://localhost:8080/api/v1/products/page?page=-1&size=20
+
+### 오프셋 페이징 실패 - 조회 크기 0
+# @name getProductsPageInvalidMinimumSize
+GET http://localhost:8080/api/v1/products/page?page=0&size=0
+
+### 오프셋 페이징 실패 - 조회 크기 초과
+# @name getProductsPageInvalidMaximumSize
+GET http://localhost:8080/api/v1/products/page?page=0&size=101
+
+### 오프셋 페이징 실패 - 잘못된 판매자 ID
+# @name getProductsPageInvalidSellerId
+GET http://localhost:8080/api/v1/products/page?sellerId=0&page=0&size=20
+
+###############################################################################
+# 커서 페이징 - 최신순
+###############################################################################
+
+### 커서 페이징 - 최신순 첫 페이지
+# @name getProductsCursorLatestFirst
+GET http://localhost:8080/api/v1/products/cursor?sortType=LATEST&size=2
+
+> {%
+  client.global.set(
+      "latestCursorId",
+      response.body.data.nextCursor.productId
+  );
+  client.global.set(
+      "latestCursorCreatedAt",
+      response.body.data.nextCursor.createdAt
+  );
+%}
+
+### 커서 페이징 - 최신순 다음 페이지
+# @name getProductsCursorLatestNext
+GET http://localhost:8080/api/v1/products/cursor?sortType=LATEST&cursorId={{latestCursorId}}&cursorCreatedAt={{latestCursorCreatedAt}}&size=2
+
+###############################################################################
+# 커서 페이징 - 가격 낮은 순
+###############################################################################
+
+### 커서 페이징 - 가격 낮은 순 첫 페이지
+# @name getProductsCursorPriceLowFirst
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&size=2
+
+> {%
+  client.global.set(
+      "priceLowCursorId",
+      response.body.data.nextCursor.productId
+  );
+  client.global.set(
+      "priceLowCursorPrice",
+      response.body.data.nextCursor.price
+  );
+%}
+
+### 커서 페이징 - 가격 낮은 순 다음 페이지
+# @name getProductsCursorPriceLowNext
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorId={{priceLowCursorId}}&cursorPrice={{priceLowCursorPrice}}&size=2
+
+###############################################################################
+# 커서 페이징 - 가격 높은 순
+###############################################################################
+
+### 커서 페이징 - 가격 높은 순 첫 페이지
+# @name getProductsCursorPriceHighFirst
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_HIGH&size=2
+
+> {%
+  client.global.set(
+      "priceHighCursorId",
+      response.body.data.nextCursor.productId
+  );
+  client.global.set(
+      "priceHighCursorPrice",
+      response.body.data.nextCursor.price
+  );
+%}
+
+### 커서 페이징 - 가격 높은 순 다음 페이지
+# @name getProductsCursorPriceHighNext
+GET http://localhost:8080/api/v1/products/cursor?
+    sortType=PRICE_HIGH&
+    cursorId={{priceHighCursorId}}&
+    cursorPrice={{priceHighCursorPrice}}&
+    size=2
+
+###############################################################################
+# 커서 페이징 - 판매자 기준
+###############################################################################
+
+### 커서 페이징 - 판매자 기준 최신순 첫 페이지
+# @name getProductsCursorBySellerLatestFirst
+GET http://localhost:8080/api/v1/products/cursor?
+    sellerId={{sellerId}}&
+    sortType=LATEST&
+    size=2
+
+> {%
+  client.global.set(
+      "sellerLatestCursorId",
+      response.body.data.nextCursor.productId
+  );
+  client.global.set(
+      "sellerLatestCursorCreatedAt",
+      response.body.data.nextCursor.createdAt
+  );
+%}
+
+### 커서 페이징 - 판매자 기준 최신순 다음 페이지
+# @name getProductsCursorBySellerLatestNext
+GET http://localhost:8080/api/v1/products/cursor?sellerId={{sellerId}}&sortType=LATEST&cursorId={{sellerLatestCursorId}}&cursorCreatedAt={{sellerLatestCursorCreatedAt}}&size=2
+
+### 커서 페이징 - 판매자 기준 가격 낮은 순 첫 페이지
+# @name getProductsCursorBySellerPriceLowFirst
+GET http://localhost:8080/api/v1/products/cursor?sellerId={{sellerId}}&sortType=PRICE_LOW&size=2
+
+> {%
+  client.global.set(
+      "sellerPriceLowCursorId",
+      response.body.data.nextCursor.productId
+  );
+  client.global.set(
+      "sellerPriceLowCursorPrice",
+      response.body.data.nextCursor.price
+  );
+%}
+
+### 커서 페이징 - 판매자 기준 가격 낮은 순 다음 페이지
+# @name getProductsCursorBySellerPriceLowNext
+GET http://localhost:8080/api/v1/products/cursor?sellerId={{sellerId}}&sortType=PRICE_LOW&cursorId={{sellerPriceLowCursorId}}&cursorPrice={{sellerPriceLowCursorPrice}}&size=2
+
+### 커서 페이징 - 판매자 기준 가격 높은 순 첫 페이지
+# @name getProductsCursorBySellerPriceHighFirst
+GET http://localhost:8080/api/v1/products/cursor?sellerId={{sellerId}}&sortType=PRICE_HIGH&size=2
+
+> {%
+  client.global.set(
+      "sellerPriceHighCursorId",
+      response.body.data.nextCursor.productId
+  );
+  client.global.set(
+      "sellerPriceHighCursorPrice",
+      response.body.data.nextCursor.price
+  );
+%}
+
+### 커서 페이징 - 판매자 기준 가격 높은 순 다음 페이지
+# @name getProductsCursorBySellerPriceHighNext
+GET http://localhost:8080/api/v1/products/cursor?sellerId={{sellerId}}&sortType=PRICE_HIGH&cursorId={{sellerPriceHighCursorId}}&cursorPrice={{sellerPriceHighCursorPrice}}&size=2
+
+###############################################################################
+# 커서 페이징 실패 요청
+###############################################################################
+
+### 커서 페이징 실패 - 잘못된 정렬 타입
+# @name getProductsCursorInvalidSortType
+GET http://localhost:8080/api/v1/products/cursor?sortType=INVALID&size=20
+
+### 커서 페이징 실패 - 조회 크기 0
+# @name getProductsCursorInvalidMinimumSize
+GET http://localhost:8080/api/v1/products/cursor?sortType=LATEST&size=0
+
+### 커서 페이징 실패 - 조회 크기 초과
+# @name getProductsCursorInvalidMaximumSize
+GET http://localhost:8080/api/v1/products/cursor?sortType=LATEST&size=101
+
+### 커서 페이징 실패 - 잘못된 판매자 ID
+# @name getProductsCursorInvalidSellerId
+GET http://localhost:8080/api/v1/products/cursor?sellerId=0&sortType=LATEST&size=20
+
+### 커서 페이징 실패 - 최신순 커서 ID만 전달
+# @name getProductsCursorLatestWithoutCreatedAt
+GET http://localhost:8080/api/v1/products/cursor?sortType=LATEST&cursorId=1&size=20
+
+### 커서 페이징 실패 - 최신순 생성 시각만 전달
+# @name getProductsCursorLatestWithoutId
+GET http://localhost:8080/api/v1/products/cursor?sortType=LATEST&cursorCreatedAt=2026-07-19T08:00:00Z&size=20
+
+### 커서 페이징 실패 - 최신순에 가격 커서 전달
+# @name getProductsCursorLatestWithPrice
+GET http://localhost:8080/api/v1/products/cursor?sortType=LATEST&cursorId=1&cursorCreatedAt=2026-07-19T08:00:00Z&cursorPrice=59000&size=20
+
+### 커서 페이징 실패 - 가격 낮은 순 커서 ID만 전달
+# @name getProductsCursorPriceLowWithoutPrice
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorId=1&size=20
+
+### 커서 페이징 실패 - 가격 낮은 순 가격만 전달
+# @name getProductsCursorPriceLowWithoutId
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorPrice=59000&size=20
+
+### 커서 페이징 실패 - 가격순에 생성 시각 커서 전달
+# @name getProductsCursorPriceWithCreatedAt
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorId=1&cursorPrice=59000&cursorCreatedAt=2026-07-19T08:00:00Z&size=20
+
+### 커서 페이징 실패 - 커서 ID가 0
+# @name getProductsCursorInvalidCursorId
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorId=0&cursorPrice=59000&size=20
+
+### 커서 페이징 실패 - 음수 가격
+# @name getProductsCursorInvalidCursorPrice
+GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorId=1&cursorPrice=-1&size=20
 
