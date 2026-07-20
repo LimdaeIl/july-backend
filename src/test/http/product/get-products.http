@@ -342,3 +342,33 @@ GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorId=0&c
 # @name getProductsCursorInvalidCursorPrice
 GET http://localhost:8080/api/v1/products/cursor?sortType=PRICE_LOW&cursorId=1&cursorPrice=-1&size=20
 
+### 상품 생성 1
+# @name createProduct1
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "한정판 기계식 키보드",
+  "price": 129000
+}
+
+> {%
+  client.global.set(
+      "productId",
+      response.body.data.productId
+  );
+%}
+
+### 상품 상세 조회
+# @name getProduct
+GET http://localhost:8080/api/v1/products/{{productId}}
+
+### 상품 상세 조회 실패 - 존재하지 않는 상품
+GET http://localhost:8080/api/v1/products/999999999
+
+### 상품 상세 조회 실패 - 상품 ID 0
+GET http://localhost:8080/api/v1/products/0
+
+### 상품 상세 조회 실패 - 음수 상품 ID
+GET http://localhost:8080/api/v1/products/-1
