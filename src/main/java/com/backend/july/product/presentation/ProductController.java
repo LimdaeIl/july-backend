@@ -3,11 +3,13 @@ package com.backend.july.product.presentation;
 import com.backend.july.common.response.ApiResponse;
 import com.backend.july.common.response.CursorResponse;
 import com.backend.july.common.response.PageResponse;
+import com.backend.july.product.application.GetProductService;
 import com.backend.july.product.application.GetProductsService;
 import com.backend.july.product.presentation.dto.ProductCursor;
 import com.backend.july.product.presentation.dto.ProductSortType;
 import com.backend.july.product.presentation.dto.condition.GetProductsCondition;
 import com.backend.july.product.presentation.dto.condition.GetProductsCursorCondition;
+import com.backend.july.product.presentation.dto.response.ProductDetailResponse;
 import com.backend.july.product.presentation.dto.response.ProductSummaryResponse;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -20,6 +22,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
 
     private final GetProductsService getProductsService;
+    private final GetProductService getProductService;
 
     @GetMapping("/page")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> getProductsByPage(
@@ -56,7 +60,8 @@ public class ProductController {
                 size
         );
 
-        PageResponse<ProductSummaryResponse> response = getProductsService.getProductsByPage(condition);
+        PageResponse<ProductSummaryResponse> response = getProductsService.getProductsByPage(
+                condition);
 
         return ResponseEntity.ok(
                 ApiResponse.ok(
@@ -112,4 +117,20 @@ public class ProductController {
                 )
         );
     }
+
+
+    @GetMapping("/{productId}")
+    public ResponseEntity<ApiResponse<ProductDetailResponse>> getProduct(
+            @PathVariable @Positive(message = "상품 상세 조회: 상품 ID는 양수여야 합니다.") Long productId
+    ) {
+        ProductDetailResponse response = getProductService.getProduct(productId);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "상품 상세 조회: 상품 상세 조회에 성공했습니다.",
+                        response
+                )
+        );
+    }
+
 }

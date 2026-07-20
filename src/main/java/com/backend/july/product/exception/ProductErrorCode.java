@@ -14,7 +14,8 @@ public enum ProductErrorCode implements ErrorCode {
     CURSOR_ID_REQUIRED(HttpStatus.BAD_REQUEST, "커서 ID는 필수입니다."),
     CURSOR_CREATED_AT_REQUIRED(HttpStatus.BAD_REQUEST, "커서 생성일은 필수입니다."),
     CURSOR_PRICE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "커서 가격은 허용되지 않습니다."),
-    CURSOR_PRICE_REQUIRED(HttpStatus.BAD_REQUEST, "커서 가격은 필수입니다.");
+    CURSOR_PRICE_REQUIRED(HttpStatus.BAD_REQUEST, "커서 가격은 필수입니다."),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 상품을 찾을 수 없습니다.");
 
 
     private final HttpStatus status;

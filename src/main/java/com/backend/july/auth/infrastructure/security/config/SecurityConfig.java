@@ -52,9 +52,10 @@ public class SecurityConfig {
                         .requestMatchers(SYSTEM_PUBLIC).permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v1/products",
-                                "/api/v1/products/**"
-                        ).permitAll()
+                                "/api/v1/products/*",
+                                "/api/v1/products/cursor/**",
+                                "/api/v1/products/page/**"
+                                ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
