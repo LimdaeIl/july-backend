@@ -118,7 +118,6 @@ public class ProductController {
         );
     }
 
-
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductDetailResponse>> getProduct(
             @PathVariable @Positive(message = "상품 상세 조회: 상품 ID는 양수여야 합니다.") Long productId
@@ -132,5 +131,4 @@ public class ProductController {
                 )
         );
     }
-
 }
