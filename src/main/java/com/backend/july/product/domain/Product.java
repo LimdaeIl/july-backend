@@ -122,4 +122,14 @@ public class Product extends BaseAuditEntity {
 
         this.status = ProductStatus.DELETED;
     }
+
+    public boolean isOnSale() {
+        return this.status == ProductStatus.ON_SALE;
+    }
+
+    public void validateOrderable() {
+        if (this.status != ProductStatus.ON_SALE) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_ON_SALE);
+        }
+    }
 }

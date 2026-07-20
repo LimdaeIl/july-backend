@@ -18,6 +18,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -72,18 +73,29 @@ public class PurchaseOrder {
     @Version
     private Long version;
 
-    private PurchaseOrder(String orderNumber, Member member) {
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    private PurchaseOrder(String orderNumber, Member member, LocalDateTime expiresAt) {
         validateOrderNumber(orderNumber);
         validateMember(member);
+        validateExpiresAt(expiresAt);
 
         this.orderNumber = orderNumber;
         this.member = member;
+        this.expiresAt = expiresAt;
         this.totalAmount = BigDecimal.ZERO;
         this.status = OrderStatus.PENDING_PAYMENT;
     }
 
-    public static PurchaseOrder create(String orderNumber, Member member) {
-        return new PurchaseOrder(orderNumber, member);
+    public static PurchaseOrder create(String orderNumber, Member member, LocalDateTime expiresAt) {
+        return new PurchaseOrder(orderNumber, member, expiresAt);
     }
 
     /**
@@ -137,12 +149,15 @@ public class PurchaseOrder {
      * 주문을 취소한다.
      * 결제 대기 또는 결제 완료 주문만 취소할 수 있도록 제한한다.
      */
-    public void cancel() {
-        if (this.status != OrderStatus.PENDING_PAYMENT && this.status != OrderStatus.PAID) {
-            throw new OrderException(OrderErrorCode.INVALID_ORDER_STATUS);
+    public void cancel(LocalDateTime cancelledAt) {
+        if (cancelledAt == null) {
+            throw new OrderException(OrderErrorCode.CANCELLED_AT_REQUIRED);
         }
 
+        validatePendingPaymentStatus();
+
         this.status = OrderStatus.CANCELLED;
+        this.cancelledAt = cancelledAt;
     }
 
     /**
@@ -223,5 +238,26 @@ public class PurchaseOrder {
         if (orderItem == null) {
             throw new OrderException(OrderErrorCode.ORDER_ITEM_REQUIRED);
         }
+    }
+
+    public boolean isExpired(LocalDateTime now) {
+        if (now == null) {
+            throw new OrderException(
+                    OrderErrorCode.CURRENT_TIME_REQUIRED
+            );
+        }
+
+        return !now.isBefore(expiresAt);
+    }
+    public void validatePayable(LocalDateTime now) {
+        validatePendingPaymentStatus();
+
+        if (isExpired(now)) {
+            throw new OrderException(
+                    OrderErrorCode.ORDER_EXPIRED
+            );
+        }
+
+        validateOrderReady();
     }
 }

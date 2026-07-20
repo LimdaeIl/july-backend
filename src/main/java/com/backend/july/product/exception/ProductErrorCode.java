@@ -17,7 +17,8 @@ public enum ProductErrorCode implements ErrorCode {
     CURSOR_PRICE_REQUIRED(HttpStatus.BAD_REQUEST, "커서 가격은 필수입니다."),
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 상품을 찾을 수 없습니다."),
     ALREADY_DELETED_PRODUCT(HttpStatus.BAD_REQUEST, "이미 삭제된 상품입니다."),
-    INVALID_PRODUCT_STATUS_BY_DELETED(HttpStatus.BAD_REQUEST, "상품 삭제는 상품 삭제 엔드포인트에서만 가능합니다.."),
+    INVALID_PRODUCT_STATUS_BY_DELETED(HttpStatus.BAD_REQUEST, "상품 삭제는 상품 삭제 엔드포인트에서만 가능합니다."),
+    PRODUCT_NOT_ON_SALE(HttpStatus.BAD_REQUEST, "상품이 판매 중이 아닙니다.");
 
 
     private final HttpStatus status;
