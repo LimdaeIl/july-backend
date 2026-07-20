@@ -55,22 +55,37 @@ public class Product extends BaseAuditEntity {
     }
 
     public void updateInformation(String name, BigDecimal price) {
+        validateNotDeleted();
+
         this.name = validateName(name);
         this.price = validatePrice(price);
     }
+
 
     public void changeStatus(ProductStatus status) {
         if (status == null) {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "status");
         }
 
+        validateNotDeleted();
+
+        if (status == ProductStatus.DELETED) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS_BY_DELETED);
+        }
+
         this.status = status;
     }
 
-
-    public boolean isOnSale() {
-        return this.status == ProductStatus.ON_SALE;
+    public boolean isDeleted() {
+        return this.status == ProductStatus.DELETED;
     }
+
+    public void validateNotDeleted() {
+        if (isDeleted()) {
+            throw new ProductException(ProductErrorCode.ALREADY_DELETED_PRODUCT);
+        }
+    }
+
 
     private static String validateName(String name) {
         if (name == null || name.isBlank()) {
@@ -98,5 +113,13 @@ public class Product extends BaseAuditEntity {
         }
 
         return normalizedPrice;
+    }
+
+    public void delete() {
+        if (this.status == ProductStatus.DELETED) {
+            throw new ProductException(ProductErrorCode.ALREADY_DELETED_PRODUCT);
+        }
+
+        this.status = ProductStatus.DELETED;
     }
 }
