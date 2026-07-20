@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -22,12 +23,7 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "v1_inventories",
         indexes = {
-                @Index(
-                        name = "idx_inventory_product_id",
-                        columnList = "product_id",
-                        unique = true
-                )
-        }
+                @Index(name = "idx_inventory_product_id", columnList = "product_id", unique = true)}
 )
 @Entity
 public class Inventory {
@@ -37,6 +33,7 @@ public class Inventory {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", nullable = false, unique = true)
     private Product product;
 
     @Column(nullable = false)
@@ -69,15 +66,14 @@ public class Inventory {
 
     public void increase(int increaseQuantity) {
         validatePositiveQuantity(increaseQuantity);
+        validateIncreaseOverflow(increaseQuantity);
 
-        try {
-            this.quantity = Math.addExact(
-                    this.quantity,
-                    increaseQuantity
-            );
-        } catch (ArithmeticException exception) {
-            throw new InventoryException(
-                    InventoryErrorCode.INVENTORY_OVERFLOW, this.quantity, increaseQuantity);
+        this.quantity += increaseQuantity;
+    }
+
+    private void validateIncreaseOverflow(int increaseQuantity) {
+        if (this.quantity > Integer.MAX_VALUE - increaseQuantity) {
+            throw new InventoryException(InventoryErrorCode.INVENTORY_OVERFLOW, this.quantity, increaseQuantity);
         }
     }
 
