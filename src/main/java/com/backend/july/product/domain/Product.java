@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
@@ -18,7 +19,19 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "v1_products")
+@Table(
+        name = "v1_products",
+        indexes = {
+                @Index(
+                        name = "idx_product_status_created_at_id",
+                        columnList = "status, created_at, id"
+                ),
+                @Index(
+                        name = "idx_product_status_price_id",
+                        columnList = "status, price, id"
+                )
+        }
+)
 @Entity
 public class Product extends BaseAuditEntity {
 

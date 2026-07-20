@@ -9,8 +9,12 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ProductErrorCode implements ErrorCode {
 
-    VALIDATE_FIELD(HttpStatus.BAD_REQUEST, "%s는 null 또는 공백일 수 없습니다.");
-
+    VALIDATE_FIELD(HttpStatus.BAD_REQUEST, "%s는 null 또는 공백일 수 없습니다."),
+    INVALID_CURSOR_SORT_TYPE(HttpStatus.BAD_REQUEST, "가격 커서에는 가격 정렬 타입이 필요합니다."),
+    CURSOR_ID_REQUIRED(HttpStatus.BAD_REQUEST, "커서 ID는 필수입니다."),
+    CURSOR_CREATED_AT_REQUIRED(HttpStatus.BAD_REQUEST, "커서 생성일은 필수입니다."),
+    CURSOR_PRICE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "커서 가격은 허용되지 않습니다."),
+    CURSOR_PRICE_REQUIRED(HttpStatus.BAD_REQUEST, "커서 가격은 필수입니다.");
 
 
     private final HttpStatus status;
