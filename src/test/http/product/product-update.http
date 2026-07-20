@@ -1,0 +1,432 @@
+### 관리자 회원가입
+# @name signUp
+POST http://localhost:8080/api/v1/auth/sign-up
+Content-Type: application/json
+
+{
+  "email": "july{{$timestamp}}@example.com",
+  "password": "Password123!",
+  "name": "관리자회원",
+  "phone": "01012345678",
+  "address": {
+    "city": "서울특별시",
+    "state": "강남구",
+    "zip": "06236",
+    "country": "대한민국"
+  }
+}
+
+> {%
+  client.global.set("adminEmail", response.body.data.email);
+%}
+
+
+### 관리자 로그인
+# @name signIn
+POST http://localhost:8080/api/v1/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "Password123!"
+}
+
+> {%
+  client.global.set("adminAccessToken", response.body.data.accessToken);
+%}
+
+
+### 수정 테스트용 상품 생성
+# @name createProduct
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "수정 전 기계식 키보드",
+  "price": 129000,
+  "initialQuantity": 100
+}
+
+> {%
+  client.global.set("productId", response.body.data.productId);
+%}
+
+
+### 상품 정보 수정
+
+### 상품 정보 수정 성공
+# @name updateProduct
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "수정 후 무선 기계식 키보드",
+  "price": 159000
+}
+
+
+### 상품 정보 수정 실패 - 인증 토큰 없음
+# @name updateProductWithoutToken
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+
+{
+  "name": "인증되지 않은 상품 수정",
+  "price": 169000
+}
+
+
+### 상품 정보 수정 실패 - 존재하지 않는 상품
+# @name updateProductNotFound
+PATCH http://localhost:8080/api/v1/admin/products/999999999
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "존재하지 않는 상품",
+  "price": 169000
+}
+
+
+### 상품 정보 수정 실패 - 상품 ID 0
+# @name updateProductInvalidProductId
+PATCH http://localhost:8080/api/v1/admin/products/0
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "잘못된 상품 ID",
+  "price": 169000
+}
+
+
+### 상품 정보 수정 실패 - 상품 ID 음수
+# @name updateProductNegativeProductId
+PATCH http://localhost:8080/api/v1/admin/products/-1
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "잘못된 상품 ID",
+  "price": 169000
+}
+
+
+### 상품 정보 수정 실패 - 상품명 누락
+# @name updateProductMissingName
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "price": 169000
+}
+
+
+### 상품 정보 수정 실패 - 상품명 공백
+# @name updateProductBlankName
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "   ",
+  "price": 169000
+}
+
+
+### 상품 정보 수정 실패 - 상품명 1자
+# @name updateProductShortName
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "키",
+  "price": 169000
+}
+
+
+### 상품 정보 수정 실패 - 가격 누락
+# @name updateProductMissingPrice
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "가격 누락 상품"
+}
+
+
+### 상품 정보 수정 실패 - 가격 0
+# @name updateProductZeroPrice
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "가격이 0인 상품",
+  "price": 0
+}
+
+
+### 상품 정보 수정 실패 - 음수 가격
+# @name updateProductNegativePrice
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "가격이 음수인 상품",
+  "price": -1000
+}
+
+
+### 상품 정보 수정 실패 - 소수 가격
+# @name updateProductDecimalPrice
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "가격이 소수인 상품",
+  "price": 159000.5
+}
+
+
+### 상품 상태 수정
+
+### 상품 상태 수정 성공 - 숨김
+# @name hideProduct
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "HIDDEN"
+}
+
+
+### 상품 상태 수정 성공 - 판매 재개
+# @name resumeProduct
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "ON_SALE"
+}
+
+
+### 상품 상태 수정 실패 - 인증 토큰 없음
+# @name updateProductStatusWithoutToken
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/status
+Content-Type: application/json
+
+{
+  "status": "HIDDEN"
+}
+
+
+### 상품 상태 수정 실패 - 상태 누락
+# @name updateProductMissingStatus
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+}
+
+
+### 상품 상태 수정 실패 - 상태 null
+# @name updateProductNullStatus
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": null
+}
+
+
+### 상품 상태 수정 실패 - 잘못된 상태
+# @name updateProductInvalidStatus
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "INVALID"
+}
+
+
+### 상품 상태 수정 실패 - 존재하지 않는 상품
+# @name updateProductStatusNotFound
+PATCH http://localhost:8080/api/v1/admin/products/999999999/status
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "HIDDEN"
+}
+
+
+### 재고 증가
+
+### 재고 증가 성공
+# @name increaseInventory
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/increase
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 50
+}
+
+
+### 재고 증가 실패 - 인증 토큰 없음
+# @name increaseInventoryWithoutToken
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/increase
+Content-Type: application/json
+
+{
+  "quantity": 10
+}
+
+
+### 재고 증가 실패 - 수량 0
+# @name increaseInventoryZero
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/increase
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 0
+}
+
+
+### 재고 증가 실패 - 음수 수량
+# @name increaseInventoryNegative
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/increase
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": -1
+}
+
+
+### 재고 증가 실패 - 수량 누락
+# @name increaseInventoryMissingQuantity
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/increase
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+}
+
+
+### 재고 증가 실패 - 존재하지 않는 상품
+# @name increaseInventoryNotFound
+PATCH http://localhost:8080/api/v1/admin/products/999999999/inventory/increase
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 10
+}
+
+
+### 재고 증가 실패 - 정수 범위 초과
+# @name increaseInventoryOverflow
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/increase
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 2147483647
+}
+
+
+### 재고 감소
+
+### 재고 감소 성공
+# @name decreaseInventory
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/decrease
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 30
+}
+
+
+### 재고 감소 실패 - 인증 토큰 없음
+# @name decreaseInventoryWithoutToken
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/decrease
+Content-Type: application/json
+
+{
+  "quantity": 10
+}
+
+
+### 재고 감소 실패 - 재고 부족
+# @name decreaseInventoryInsufficient
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/decrease
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 999999
+}
+
+
+### 재고 감소 실패 - 수량 0
+# @name decreaseInventoryZero
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/decrease
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 0
+}
+
+
+### 재고 감소 실패 - 음수 수량
+# @name decreaseInventoryNegative
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/decrease
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": -1
+}
+
+
+### 재고 감소 실패 - 수량 누락
+# @name decreaseInventoryMissingQuantity
+PATCH http://localhost:8080/api/v1/admin/products/{{productId}}/inventory/decrease
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+}
+
+
+### 재고 감소 실패 - 존재하지 않는 상품
+# @name decreaseInventoryNotFound
+PATCH http://localhost:8080/api/v1/admin/products/999999999/inventory/decrease
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 10
+}
+
+
+### 최종 상품 상세 조회
+# @name getUpdatedProduct
+GET http://localhost:8080/api/v1/products/{{productId}}
