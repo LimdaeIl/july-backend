@@ -1,10 +1,16 @@
 package com.backend.july.product.presentation.dto.request;
 
-import com.backend.july.product.domain.ProductStatus;
+import jakarta.validation.constraints.NotNull;
 
 public record UpdateProductStatusRequest(
 
-        ProductStatus status
+        @NotNull(message = "상품 상태는 필수입니다.")
+        ProductChangeableStatus status
 ) {
+
+    public enum ProductChangeableStatus {
+        ON_SALE,
+        HIDDEN
+    }
 
 }

@@ -1,6 +1,7 @@
 package com.backend.july.product.application;
 
 import com.backend.july.product.domain.Product;
+import com.backend.july.product.domain.ProductStatus;
 import com.backend.july.product.exception.ProductErrorCode;
 import com.backend.july.product.exception.ProductException;
 import com.backend.july.product.infrastructure.ProductRepository;
@@ -19,7 +20,8 @@ public class UpdateProductStatusService {
     @Transactional
     public UpdateProductStatusResponse update(Long productId, UpdateProductStatusRequest request) {
         Product product = findProduct(productId);
-        product.changeStatus(request.status());
+        product.validateNotDeleted();
+        product.changeStatus(ProductStatus.valueOf(request.status().name()));
         return UpdateProductStatusResponse.from(product);
     }
 

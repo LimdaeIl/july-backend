@@ -18,12 +18,16 @@ public class DecreaseInventoryService {
     @Transactional
     public ChangeInventoryResponse decrease(Long productId, int quantity) {
         Inventory inventory = findInventory(productId);
+
+        inventory.getProduct().validateNotDeleted();
         inventory.decrease(quantity);
+
         return ChangeInventoryResponse.from(inventory);
     }
 
     private Inventory findInventory(Long productId) {
         return inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND));
+                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND)
+                );
     }
 }

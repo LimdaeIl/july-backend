@@ -5,6 +5,7 @@ import com.backend.july.inventory.exception.InventoryErrorCode;
 import com.backend.july.inventory.exception.InventoryException;
 import com.backend.july.inventory.infrastructure.InventoryRepository;
 import com.backend.july.inventory.presentation.dto.response.ChangeInventoryResponse;
+import com.backend.july.product.domain.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,11 @@ public class IncreaseInventoryService {
     @Transactional
     public ChangeInventoryResponse increase(Long productId, int quantity) {
         Inventory inventory = findInventory(productId);
+        Product product = inventory.getProduct();
+        product.validateNotDeleted();
+
         inventory.increase(quantity);
+
         return ChangeInventoryResponse.from(inventory);
     }
 
