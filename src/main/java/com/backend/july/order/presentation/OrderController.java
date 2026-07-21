@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RequestMapping("/api/v1/orders")
 @RestController
-public class OrderController {
+public class OrderController implements OrderControllerDocs {
 
     private final CreateOrderService createOrderService;
     private final GetOrderService getOrderService;
@@ -48,11 +48,8 @@ public class OrderController {
             @AuthenticationPrincipal LoginMember loginMember,
             @Valid @RequestBody CreateOrderRequest request
     ) {
-        CreateOrderResponse response = createOrderService.create(
-                loginMember.memberId(),
-                request.productId(),
-                request.quantity()
-        );
+        CreateOrderResponse response = createOrderService.create(loginMember.memberId(),
+                request.items());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
