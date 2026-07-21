@@ -26,21 +26,23 @@ public class SignInService {
     private final TokenRepository tokenRepository;
     private final JWTHashUtil jwtHashUtil;
 
-
     @Transactional
     public SignInResult signIn(SignInRequest request) {
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(
-                        () -> new AuthException(AuthErrorCode.INVALID_SIGN_IN));
+                        () -> new AuthException(AuthErrorCode.INVALID_SIGN_IN)
+                );
 
-        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
-            throw new AuthException(AuthErrorCode.INVALID_SIGN_IN);
-        }
+        validateSignIn(member, request.password());
 
-        String accessToken = jwtTokenProvider.createAccessToken(member.getId(),
-                member.getRole().name());
+        String accessToken = jwtTokenProvider.createAccessToken(
+                member.getId(),
+                member.getRole().name()
+        );
 
-        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(
+                member.getId()
+        );
 
         long refreshTokenRemainingMillis =
                 jwtTokenProvider.getRefreshTokenRemainingMillis(refreshToken);
@@ -59,5 +61,21 @@ public class SignInService {
                 refreshToken,
                 jwtTokenProvider.getRefreshTokenRemainingSeconds(refreshToken)
         );
+    }
+
+    private void validateSignIn(
+            Member member,
+            String rawPassword
+    ) {
+        if (!member.isSignInAllowed()) {
+            throw new AuthException(AuthErrorCode.INVALID_SIGN_IN);
+        }
+
+        if (!passwordEncoder.matches(
+                rawPassword,
+                member.getPassword()
+        )) {
+            throw new AuthException(AuthErrorCode.INVALID_SIGN_IN);
+        }
     }
 }

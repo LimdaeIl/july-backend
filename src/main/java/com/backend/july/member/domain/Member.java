@@ -23,8 +23,8 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "v1_members",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_v1_members_email", columnNames = {"email"}),
-                @UniqueConstraint(name = "uk_v1_members_phone", columnNames = {"phone"})
+                @UniqueConstraint(name = "uk_v1_members_email", columnNames = "email"),
+                @UniqueConstraint(name = "uk_v1_members_phone", columnNames = "phone")
         }
 )
 @Entity
@@ -50,11 +50,11 @@ public class Member extends BaseAuditEntity {
     private Address address;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @Column(name = "role", nullable = false, length = 20)
     private MemberRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 20)
     private MemberStatus status;
 
     private Member(String email, String password, String name, String phone, Address address) {
@@ -72,10 +72,46 @@ public class Member extends BaseAuditEntity {
         return new Member(email, password, name, phone, address);
     }
 
+    public void updateProfile(String name, String phone, Address address) {
+        validateUpdatable();
+
+        this.name = validate(name, "이름");
+        this.phone = validate(phone, "전화번호");
+        this.address = Objects.requireNonNull(address, "주소는 null일 수 없습니다.");
+    }
+
+    public void withdraw() {
+        if (status == MemberStatus.WITHDRAWAL) {
+            throw new MemberException(MemberErrorCode.ALREADY_WITHDRAWN_MEMBER);
+        }
+
+        this.status = MemberStatus.WITHDRAWAL;
+    }
+
+    public boolean isWithdrawal() {
+        return status == MemberStatus.WITHDRAWAL;
+    }
+
+    public boolean hasSamePhone(String phone) {
+        return this.phone.equals(phone);
+    }
+
+    private void validateUpdatable() {
+        if (status != MemberStatus.ACTIVATE) {
+            throw new MemberException(MemberErrorCode.MEMBER_NOT_ACTIVE);
+        }
+    }
+
     private String validate(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new MemberException(MemberErrorCode.VALIDATE_FIELD, fieldName);
         }
+
         return value;
     }
+
+    public boolean isSignInAllowed() {
+        return status == MemberStatus.ACTIVATE;
+    }
 }
+

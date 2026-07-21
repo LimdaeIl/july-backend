@@ -10,8 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Embeddable
 public class Address {
 
@@ -21,26 +21,24 @@ public class Address {
     @Column(name = "state", nullable = false, length = 100)
     private String state;
 
-    @Column(name = "zip", nullable = false, length = 100)
+    @Column(name = "zip", nullable = false, length = 20)
     private String zip;
 
     private Address(String city, String state, String zip) {
-        validate(city, "City");
-        validate(state, "State");
-        validate(zip, "Zip");
-
-        this.city = city;
-        this.state = state;
-        this.zip = zip;}
+        this.city = validate(city, "도시");
+        this.state = validate(state, "지역");
+        this.zip = validate(zip, "우편번호");
+    }
 
     public static Address of(String city, String state, String zip) {
         return new Address(city, state, zip);
     }
 
-    private void validate(String value, String fieldName) {
+    private String validate(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new MemberException(MemberErrorCode.VALIDATE_FIELD, fieldName);
         }
+
+        return value;
     }
 }
-
