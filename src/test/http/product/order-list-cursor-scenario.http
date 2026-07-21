@@ -1,0 +1,608 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@password = Password123!
+
+### =========================================================
+### 주문 목록 조회 커서 페이징 시나리오
+###
+### 실행 순서:
+### 1. 관리자 가입/로그인
+### 2. 테스트 상품 생성
+### 3. 구매자 가입/로그인
+### 4. 주문 4건 생성
+### 5. 주문 1건 취소
+### 6. 기본/상태/키워드/커서 목록 조회
+###
+### 주의:
+### - 관리자 가입 계정에 ADMIN 권한이 부여되는 환경을 전제로 한다.
+### - GET /api/v1/orders 응답은 ApiResponse로 감싸지 않은
+###   CursorResponse<OrderSummaryResponse, Long> 직접 응답을 전제로 한다.
+### =========================================================
+
+
+### 1-1. 관리자 회원가입
+# @name signUpAdmin
+POST {{baseUrl}}/api/v1/auth/sign-up
+Content-Type: {{contentType}}
+
+{
+  "email": "order-admin-{{$timestamp}}@example.com",
+  "password": "{{password}}",
+  "name": "주문관리자",
+  "phone": "01011112222",
+  "address": {
+    "city": "서울특별시",
+    "state": "강남구",
+    "zip": "06236",
+    "country": "대한민국"
+  }
+}
+
+> {%
+client.test("관리자 회원가입 성공", function () {
+  client.assert(
+      response.status === 200 || response.status === 201,
+      "예상 상태 코드: 200 또는 201, 실제: " + response.status
+  );
+  client.assert(response.body.data, "응답 data가 없습니다.");
+  client.assert(response.body.data.email, "관리자 이메일이 없습니다.");
+});
+
+client.global.set("adminEmail", response.body.data.email);
+%}
+
+
+### 1-2. 관리자 로그인
+# @name signInAdmin
+POST {{baseUrl}}/api/v1/auth/sign-in
+Content-Type: {{contentType}}
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{password}}"
+}
+
+> {%
+client.test("관리자 로그인 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(response.body.data, "응답 data가 없습니다.");
+  client.assert(response.body.data.accessToken, "관리자 액세스 토큰이 없습니다.");
+});
+
+client.global.set("adminAccessToken", response.body.data.accessToken);
+%}
+
+
+### 2-1. 상품 생성 - 한정판 기계식 키보드
+# @name createKeyboard
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "한정판 기계식 키보드",
+  "price": 129000,
+  "initialQuantity": 30
+}
+
+> {%
+client.test("첫 번째 상품 생성 성공", function () {
+  client.assert(
+      response.status === 200 || response.status === 201,
+      "예상 상태 코드: 200 또는 201"
+  );
+  client.assert(response.body.data.productId, "상품 ID가 없습니다.");
+});
+
+client.global.set("keyboardProductId", response.body.data.productId);
+%}
+
+
+### 2-2. 상품 생성 - 무선 게이밍 마우스
+# @name createMouse
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "무선 게이밍 마우스",
+  "price": 59000,
+  "initialQuantity": 30
+}
+
+> {%
+client.test("두 번째 상품 생성 성공", function () {
+  client.assert(
+      response.status === 200 || response.status === 201,
+      "예상 상태 코드: 200 또는 201"
+  );
+  client.assert(response.body.data.productId, "상품 ID가 없습니다.");
+});
+
+client.global.set("mouseProductId", response.body.data.productId);
+%}
+
+
+### 2-3. 상품 생성 - 울트라와이드 모니터
+# @name createMonitor
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "울트라와이드 모니터",
+  "price": 249000,
+  "initialQuantity": 30
+}
+
+> {%
+client.test("세 번째 상품 생성 성공", function () {
+  client.assert(
+      response.status === 200 || response.status === 201,
+      "예상 상태 코드: 200 또는 201"
+  );
+  client.assert(response.body.data.productId, "상품 ID가 없습니다.");
+});
+
+client.global.set("monitorProductId", response.body.data.productId);
+%}
+
+
+### 2-4. 상품 생성 - 저소음 적축 키보드
+# @name createSilentKeyboard
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "저소음 적축 키보드",
+  "price": 89000,
+  "initialQuantity": 30
+}
+
+> {%
+client.test("네 번째 상품 생성 성공", function () {
+  client.assert(
+      response.status === 200 || response.status === 201,
+      "예상 상태 코드: 200 또는 201"
+  );
+  client.assert(response.body.data.productId, "상품 ID가 없습니다.");
+});
+
+client.global.set("silentKeyboardProductId", response.body.data.productId);
+%}
+
+
+### 3-1. 구매자 회원가입
+# @name signUpBuyer
+POST {{baseUrl}}/api/v1/auth/sign-up
+Content-Type: {{contentType}}
+
+{
+  "email": "order-buyer-{{$timestamp}}@example.com",
+  "password": "{{password}}",
+  "name": "주문구매자",
+  "phone": "01033334444",
+  "address": {
+    "city": "서울특별시",
+    "state": "송파구",
+    "zip": "05510",
+    "country": "대한민국"
+  }
+}
+
+> {%
+client.test("구매자 회원가입 성공", function () {
+  client.assert(
+      response.status === 200 || response.status === 201,
+      "예상 상태 코드: 200 또는 201"
+  );
+  client.assert(response.body.data.email, "구매자 이메일이 없습니다.");
+});
+
+client.global.set("buyerEmail", response.body.data.email);
+%}
+
+
+### 3-2. 구매자 로그인
+# @name signInBuyer
+POST {{baseUrl}}/api/v1/auth/sign-in
+Content-Type: {{contentType}}
+
+{
+  "email": "{{buyerEmail}}",
+  "password": "{{password}}"
+}
+
+> {%
+client.test("구매자 로그인 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(response.body.data.accessToken, "구매자 액세스 토큰이 없습니다.");
+});
+
+client.global.set("buyerAccessToken", response.body.data.accessToken);
+%}
+
+
+### 4-1. 주문 생성 - 한정판 기계식 키보드
+# @name createOrder1
+POST {{baseUrl}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{buyerAccessToken}}
+
+{
+  "productId": {{keyboardProductId}},
+  "quantity": 1
+}
+
+> {%
+client.test("첫 번째 주문 생성 성공", function () {
+  client.assert(response.status === 201, "예상 상태 코드: 201");
+  client.assert(response.body.data.orderId, "주문 ID가 없습니다.");
+});
+
+client.global.set("orderId1", response.body.data.orderId);
+%}
+
+
+### 4-2. 주문 생성 - 무선 게이밍 마우스
+# @name createOrder2
+POST {{baseUrl}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{buyerAccessToken}}
+
+{
+  "productId": {{mouseProductId}},
+  "quantity": 2
+}
+
+> {%
+client.test("두 번째 주문 생성 성공", function () {
+  client.assert(response.status === 201, "예상 상태 코드: 201");
+  client.assert(response.body.data.orderId, "주문 ID가 없습니다.");
+});
+
+client.global.set("orderId2", response.body.data.orderId);
+%}
+
+
+### 4-3. 주문 생성 - 울트라와이드 모니터
+# @name createOrder3
+POST {{baseUrl}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{buyerAccessToken}}
+
+{
+  "productId": {{monitorProductId}},
+  "quantity": 1
+}
+
+> {%
+client.test("세 번째 주문 생성 성공", function () {
+  client.assert(response.status === 201, "예상 상태 코드: 201");
+  client.assert(response.body.data.orderId, "주문 ID가 없습니다.");
+});
+
+client.global.set("orderId3", response.body.data.orderId);
+%}
+
+
+### 4-4. 주문 생성 - 저소음 적축 키보드
+# @name createOrder4
+POST {{baseUrl}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{buyerAccessToken}}
+
+{
+  "productId": {{silentKeyboardProductId}},
+  "quantity": 1
+}
+
+> {%
+client.test("네 번째 주문 생성 성공", function () {
+  client.assert(response.status === 201, "예상 상태 코드: 201");
+  client.assert(response.body.data.orderId, "주문 ID가 없습니다.");
+});
+
+client.global.set("orderId4", response.body.data.orderId);
+%}
+
+
+### 5. 주문 취소 - 두 번째 주문을 CANCELLED 상태로 변경
+# @name cancelOrder2
+PATCH {{baseUrl}}/api/v1/orders/{{orderId2}}/cancel
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("주문 취소 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(response.body.data, "응답 data가 없습니다.");
+});
+%}
+
+
+### 6-1. 내 주문 목록 조회 - 기본값
+# @name getMyOrdersDefault
+GET {{baseUrl}}/api/v1/orders
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("기본 주문 목록 조회 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(Array.isArray(response.body.content), "content는 배열이어야 합니다.");
+  client.assert(response.body.content.length === 4, "생성한 주문 4건이 조회되어야 합니다.");
+  client.assert(response.body.size === 4, "size는 실제 content 개수여야 합니다.");
+  client.assert(response.body.hasNext === false, "기본 size=20이므로 다음 페이지가 없어야 합니다.");
+  client.assert(response.body.nextCursor === null, "마지막 페이지의 nextCursor는 null이어야 합니다.");
+});
+
+client.test("주문 목록 최신 ID 내림차순 검증", function () {
+  const content = response.body.content;
+
+  for (let index = 0; index < content.length - 1; index++) {
+    client.assert(
+        content[index].orderId > content[index + 1].orderId,
+        "주문은 orderId 내림차순이어야 합니다."
+    );
+  }
+});
+
+client.test("주문 요약 응답 필드 검증", function () {
+  const firstOrder = response.body.content[0];
+
+  client.assert(firstOrder.orderId, "orderId가 없습니다.");
+  client.assert(firstOrder.orderNumber, "orderNumber가 없습니다.");
+  client.assert(firstOrder.status, "status가 없습니다.");
+  client.assert(firstOrder.totalAmount !== null, "totalAmount가 없습니다.");
+  client.assert(firstOrder.orderedAt, "orderedAt이 없습니다.");
+  client.assert(firstOrder.itemCount === 1, "현재 주문은 상품 1종이어야 합니다.");
+  client.assert(firstOrder.representativeItem, "representativeItem이 없습니다.");
+  client.assert(firstOrder.representativeItem.productId, "대표 상품 ID가 없습니다.");
+  client.assert(firstOrder.representativeItem.productName, "대표 상품명이 없습니다.");
+  client.assert(firstOrder.representativeItem.orderPrice !== null, "주문 가격이 없습니다.");
+  client.assert(firstOrder.representativeItem.quantity > 0, "주문 수량은 양수여야 합니다.");
+  client.assert(firstOrder.representativeItem.lineAmount !== null, "상품별 금액이 없습니다.");
+});
+
+client.global.set(
+    "orderNumberKeyword",
+    response.body.content[0].orderNumber
+);
+%}
+
+
+### 6-2. 내 주문 목록 조회 - 첫 페이지(size=2)
+# @name getMyOrdersFirstPage
+GET {{baseUrl}}/api/v1/orders?size=2
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("주문 목록 첫 페이지 조회 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(Array.isArray(response.body.content), "content는 배열이어야 합니다.");
+  client.assert(response.body.content.length === 2, "첫 페이지에는 2건이 있어야 합니다.");
+  client.assert(response.body.size === 2, "size는 2여야 합니다.");
+  client.assert(response.body.hasNext === true, "다음 페이지가 있어야 합니다.");
+  client.assert(response.body.nextCursor !== null, "nextCursor가 있어야 합니다.");
+});
+
+client.test("첫 페이지 nextCursor 검증", function () {
+  const content = response.body.content;
+  const lastOrderId = content[content.length - 1].orderId;
+
+  client.assert(
+      response.body.nextCursor === lastOrderId,
+      "nextCursor는 현재 페이지 마지막 orderId여야 합니다."
+  );
+});
+
+client.global.set("ordersNextCursor", response.body.nextCursor);
+client.global.set("firstPageFirstOrderId", response.body.content[0].orderId);
+client.global.set("firstPageLastOrderId", response.body.content[1].orderId);
+%}
+
+
+### 6-3. 내 주문 목록 조회 - 다음 페이지
+# @name getMyOrdersNextPage
+GET {{baseUrl}}/api/v1/orders?cursor={{ordersNextCursor}}&size=2
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("주문 목록 다음 페이지 조회 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(Array.isArray(response.body.content), "content는 배열이어야 합니다.");
+  client.assert(response.body.content.length === 2, "다음 페이지에는 2건이 있어야 합니다.");
+  client.assert(response.body.size === 2, "size는 2여야 합니다.");
+  client.assert(response.body.hasNext === false, "마지막 페이지여야 합니다.");
+  client.assert(response.body.nextCursor === null, "마지막 페이지의 nextCursor는 null이어야 합니다.");
+});
+
+client.test("페이지 간 주문 중복 및 커서 경계 검증", function () {
+  const content = response.body.content;
+
+  content.forEach(function (order) {
+    client.assert(
+        order.orderId < Number(client.global.get("ordersNextCursor")),
+        "다음 페이지 주문 ID는 cursor보다 작아야 합니다."
+    );
+
+    client.assert(
+        order.orderId !== Number(client.global.get("firstPageFirstOrderId"))
+        && order.orderId !== Number(client.global.get("firstPageLastOrderId")),
+        "첫 페이지 주문과 중복되면 안 됩니다."
+    );
+  });
+});
+%}
+
+
+### 6-4. 상태 필터 - PENDING_PAYMENT
+# @name getMyPendingOrders
+GET {{baseUrl}}/api/v1/orders?status=PENDING_PAYMENT&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("결제 대기 주문 필터 조회 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(response.body.content.length === 3, "PENDING_PAYMENT 주문은 3건이어야 합니다.");
+
+  response.body.content.forEach(function (order) {
+    client.assert(
+        order.status === "PENDING_PAYMENT",
+        "모든 주문 상태는 PENDING_PAYMENT여야 합니다."
+    );
+  });
+});
+%}
+
+
+### 6-5. 상태 필터 - CANCELLED
+# @name getMyCancelledOrders
+GET {{baseUrl}}/api/v1/orders?status=CANCELLED&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("취소 주문 필터 조회 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(response.body.content.length === 1, "CANCELLED 주문은 1건이어야 합니다.");
+  client.assert(
+      response.body.content[0].status === "CANCELLED",
+      "조회된 주문 상태는 CANCELLED여야 합니다."
+  );
+  client.assert(
+      response.body.content[0].orderId === Number(client.global.get("orderId2")),
+      "취소한 두 번째 주문이 조회되어야 합니다."
+  );
+});
+%}
+
+
+### 6-6. 상품명 키워드 필터 - 키보드
+# @name getMyOrdersByProductKeyword
+GET {{baseUrl}}/api/v1/orders?keyword=%ED%82%A4%EB%B3%B4%EB%93%9C&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("상품명 키워드 검색 성공", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(response.body.content.length === 2, "키보드 주문은 2건이어야 합니다.");
+
+  response.body.content.forEach(function (order) {
+    client.assert(
+        order.representativeItem.productName.includes("키보드"),
+        "대표 상품명에 '키보드'가 포함되어야 합니다."
+    );
+  });
+});
+%}
+
+
+### 6-7. 주문번호 키워드 필터
+# @name getMyOrdersByOrderNumberKeyword
+GET {{baseUrl}}/api/v1/orders?keyword={{orderNumberKeyword}}&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+# 6-1 응답의 첫 번째 orderNumber를 자동으로 사용한다.
+
+
+### 6-8. 검색 결과 없음
+# @name getMyOrdersEmptyResult
+GET {{baseUrl}}/api/v1/orders?keyword=NO_MATCH_ORDER_KEYWORD&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("검색 결과 없음 응답 검증", function () {
+  client.assert(response.status === 200, "예상 상태 코드: 200");
+  client.assert(Array.isArray(response.body.content), "content는 배열이어야 합니다.");
+  client.assert(response.body.content.length === 0, "content는 비어 있어야 합니다.");
+  client.assert(response.body.size === 0, "size는 0이어야 합니다.");
+  client.assert(response.body.hasNext === false, "hasNext는 false여야 합니다.");
+  client.assert(response.body.nextCursor === null, "nextCursor는 null이어야 합니다.");
+});
+%}
+
+
+### 7-1. 실패 - 인증 토큰 없음
+# @name getMyOrdersWithoutAuthentication
+GET {{baseUrl}}/api/v1/orders
+
+> {%
+client.test("미인증 주문 목록 조회 실패", function () {
+  client.assert(
+      response.status === 401 || response.status === 403,
+      "예상 상태 코드: 401 또는 403"
+  );
+});
+%}
+
+
+### 7-2. 실패 - 커서가 0
+# @name getMyOrdersInvalidCursorZero
+GET {{baseUrl}}/api/v1/orders?cursor=0&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("커서 0 검증 실패", function () {
+  client.assert(response.status === 400, "예상 상태 코드: 400");
+});
+%}
+
+
+### 7-3. 실패 - 커서가 음수
+# @name getMyOrdersInvalidCursorNegative
+GET {{baseUrl}}/api/v1/orders?cursor=-1&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("음수 커서 검증 실패", function () {
+  client.assert(response.status === 400, "예상 상태 코드: 400");
+});
+%}
+
+
+### 7-4. 실패 - 조회 크기가 0
+# @name getMyOrdersInvalidMinimumSize
+GET {{baseUrl}}/api/v1/orders?size=0
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("조회 크기 최솟값 검증 실패", function () {
+  client.assert(response.status === 400, "예상 상태 코드: 400");
+});
+%}
+
+
+### 7-5. 실패 - 조회 크기 초과
+# @name getMyOrdersInvalidMaximumSize
+GET {{baseUrl}}/api/v1/orders?size=101
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("조회 크기 최댓값 검증 실패", function () {
+  client.assert(response.status === 400, "예상 상태 코드: 400");
+});
+%}
+
+
+### 7-6. 실패 - 잘못된 주문 상태
+# @name getMyOrdersInvalidStatus
+GET {{baseUrl}}/api/v1/orders?status=INVALID&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("잘못된 주문 상태 변환 실패", function () {
+  client.assert(response.status === 400, "예상 상태 코드: 400");
+});
+%}
+
+
+### 7-7. 실패 - 검색어 100자 초과
+# @name getMyOrdersKeywordTooLong
+GET {{baseUrl}}/api/v1/orders?keyword=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&size=20
+Authorization: Bearer {{buyerAccessToken}}
+
+> {%
+client.test("검색어 길이 검증 실패", function () {
+  client.assert(response.status === 400, "예상 상태 코드: 400");
+});
+%}
