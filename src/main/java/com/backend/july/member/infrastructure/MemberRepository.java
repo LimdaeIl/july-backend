@@ -2,9 +2,6 @@ package com.backend.july.member.infrastructure;
 
 import com.backend.july.member.domain.Member;
 import jakarta.persistence.LockModeType;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -28,4 +25,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByIdForUpdate(
             @Param("memberId") Long memberId
     );
+
+    boolean existsByPhoneAndIdNot(String phone, Long memberId);
+
 }
