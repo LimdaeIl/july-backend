@@ -10,7 +10,9 @@ public record CursorResponse<T, C>(
 ) {
 
     public CursorResponse {
-        content = List.copyOf(content);
+        content = content == null
+                ? List.of()
+                : List.copyOf(content);
     }
 
     public static <T, C> CursorResponse<T, C> of(
@@ -21,8 +23,17 @@ public record CursorResponse<T, C>(
         return new CursorResponse<>(
                 content,
                 nextCursor,
-                content.size(),
+                content == null ? 0 : content.size(),
                 hasNext
+        );
+    }
+
+    public static <T, C> CursorResponse<T, C> empty() {
+        return new CursorResponse<>(
+                List.of(),
+                null,
+                0,
+                false
         );
     }
 }
