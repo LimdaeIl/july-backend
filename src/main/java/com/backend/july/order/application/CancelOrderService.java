@@ -30,14 +30,19 @@ public class CancelOrderService {
                 .findByIdAndMemberIdForUpdate(orderId, memberId)
                 .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
 
-        order.cancel(LocalDateTime.now(clock));
+        LocalDateTime cancelledAt = LocalDateTime.now(clock);
+
+        order.cancelPendingOrder(cancelledAt);
 
         for (OrderItem orderItem : order.getOrderItems()) {
-            Inventory inventory = inventoryRepository.findByProductIdForUpdate(orderItem.getProductId())
-                    .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND));
+            Inventory inventory = inventoryRepository
+                    .findByProductIdForUpdate(orderItem.getProductId())
+                    .orElseThrow(
+                            () -> new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND));
 
             inventory.increase(orderItem.getQuantity());
         }
+
         return CancelOrderResponse.from(order);
     }
 }

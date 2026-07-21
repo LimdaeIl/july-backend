@@ -1,5 +1,6 @@
 package com.backend.july.order.domain;
 
+import com.backend.july.common.audit.BaseAuditEntity;
 import com.backend.july.member.domain.Member;
 import com.backend.july.order.exception.OrderErrorCode;
 import com.backend.july.order.exception.OrderException;
@@ -13,6 +14,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -43,35 +45,51 @@ import lombok.NoArgsConstructor;
                 @Index(
                         name = "idx_order_member_status",
                         columnList = "member_id, status"
+                ),
+                @Index(
+                        name = "idx_order_status_expires_at",
+                        columnList = "status, expires_at"
                 )
         }
 )
 @Entity
-public class PurchaseOrder {
+public class PurchaseOrder extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_number", nullable = false, updatable = false, length = 50, unique = true)
+    @Column(
+            name = "order_number",
+            nullable = false,
+            updatable = false,
+            length = 50,
+            unique = true
+    )
     private String orderNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(name = "total_amount", nullable = false, precision = 19, scale = 2)
+    @Column(
+            name = "total_amount",
+            nullable = false,
+            precision = 19,
+            scale = 2
+    )
     private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(name = "status", nullable = false, length = 30)
     private OrderStatus status;
 
-    // PurchaseOrder가 연관관계의 주인이 아니며, OrderItem의 order 필드가 FK를 관리한다.
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private final List<OrderItem> orderItems = new ArrayList<>();
-
-    @Version
-    private Long version;
 
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
@@ -82,7 +100,14 @@ public class PurchaseOrder {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
-    private PurchaseOrder(String orderNumber, Member member, LocalDateTime expiresAt) {
+    @Version
+    private Long version;
+
+    private PurchaseOrder(
+            String orderNumber,
+            Member member,
+            LocalDateTime expiresAt
+    ) {
         validateOrderNumber(orderNumber);
         validateMember(member);
         validateExpiresAt(expiresAt);
@@ -94,18 +119,21 @@ public class PurchaseOrder {
         this.status = OrderStatus.PENDING_PAYMENT;
     }
 
-    private void validateExpiresAt(LocalDateTime expiresAt) {
-        if (expiresAt == null) {
-            throw new OrderException(OrderErrorCode.EXPIRES_AT_REQUIRED);
-        }
-    }
-
-    public static PurchaseOrder create(String orderNumber, Member member, LocalDateTime expiresAt) {
-        return new PurchaseOrder(orderNumber, member, expiresAt);
+    public static PurchaseOrder create(
+            String orderNumber,
+            Member member,
+            LocalDateTime expiresAt
+    ) {
+        return new PurchaseOrder(
+                orderNumber,
+                member,
+                expiresAt
+        );
     }
 
     /**
-     * OrderItem 생성 후 주문에 연결할 때 사용한다. 양방향 연관관계 편의 메서드는 PurchaseOrder 한 곳에서 관리한다.
+     * 주문 상품을 주문에 연결한다.
+     * 양방향 연관관계는 PurchaseOrder에서만 관리한다.
      */
     public void addItem(OrderItem orderItem) {
         validateOrderItem(orderItem);
@@ -118,19 +146,18 @@ public class PurchaseOrder {
         calculateTotalAmount();
     }
 
-    /**
-     * 필요하지 않다면 외부에서 컬렉션을 직접 수정하지 못하게 한다.
-     */
     public List<OrderItem> getOrderItems() {
         return Collections.unmodifiableList(orderItems);
     }
 
     /**
-     * 주문 생성을 마치기 전 최소 한 개 이상의 상품이 있는지 검증한다. 주문 저장 직전에 서비스에서 호출할 수 있다.
+     * 주문 저장 또는 결제 전에 주문 구성이 유효한지 검증한다.
      */
     public void validateOrderReady() {
         if (orderItems.isEmpty()) {
-            throw new OrderException(OrderErrorCode.ORDER_ITEMS_EMPTY);
+            throw new OrderException(
+                    OrderErrorCode.ORDER_ITEMS_EMPTY
+            );
         }
 
         if (totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -140,38 +167,54 @@ public class PurchaseOrder {
         }
     }
 
-
-    // 결제 승인 완료 후 주문 상태를 변경한다.
-    public void pay() {
-        validatePendingPaymentStatus();
-        validateOrderReady();
+    /**
+     * 결제 승인 완료 후 호출한다.
+     */
+    public void pay(LocalDateTime paidAt) {
+        validatePaidAt(paidAt);
+        validatePayable(paidAt);
 
         this.status = OrderStatus.PAID;
+        this.paidAt = paidAt;
     }
 
     /**
-     * 주문을 취소한다. 결제 대기 또는 결제 완료 주문만 취소할 수 있도록 제한한다.
+     * 결제 전 주문을 사용자가 취소할 때 호출한다.
      */
-    public void cancel(LocalDateTime cancelledAt) {
-        if (cancelledAt == null) {
-            throw new OrderException(OrderErrorCode.CANCELLED_AT_REQUIRED);
-        }
-
-        if (this.status != OrderStatus.PENDING_PAYMENT && this.status != OrderStatus.PAID) {
-            throw new OrderException(OrderErrorCode.INVALID_ORDER_STATUS);
-        }
+    public void cancelPendingOrder(LocalDateTime cancelledAt) {
+        validateCancelledAt(cancelledAt);
+        validatePendingPaymentStatus();
 
         this.status = OrderStatus.CANCELLED;
         this.cancelledAt = cancelledAt;
     }
 
     /**
-     * 재고 차감, 주문 생성 또는 결제 처리 실패 상태를 표현한다.
+     * 결제 승인 후 PG 환불까지 성공한 주문을 취소할 때 호출한다.
+     * 이 메서드는 일반 주문 취소 API에서 직접 호출하면 안 된다.
      */
-    public void fail() {
+    public void cancelPaidOrder(LocalDateTime cancelledAt) {
+        validateCancelledAt(cancelledAt);
+        validatePaidStatus();
+
+        this.status = OrderStatus.CANCELLED;
+        this.cancelledAt = cancelledAt;
+    }
+
+    /**
+     * 결제 기한이 지난 주문을 만료 처리한다.
+     */
+    public void expire(LocalDateTime expiredAt) {
+        validateCurrentTime(expiredAt);
         validatePendingPaymentStatus();
 
-        this.status = OrderStatus.FAILED;
+        if (!isExpired(expiredAt)) {
+            throw new OrderException(
+                    OrderErrorCode.ORDER_NOT_EXPIRED
+            );
+        }
+
+        this.status = OrderStatus.EXPIRED;
     }
 
     public boolean isOwnedBy(Long memberId) {
@@ -184,7 +227,9 @@ public class PurchaseOrder {
 
     public void validateOwner(Long memberId) {
         if (!isOwnedBy(memberId)) {
-            throw new OrderException(OrderErrorCode.ORDER_NOT_OWNED);
+            throw new OrderException(
+                    OrderErrorCode.ORDER_NOT_OWNED
+            );
         }
     }
 
@@ -200,62 +245,24 @@ public class PurchaseOrder {
         return status == OrderStatus.CANCELLED;
     }
 
-    private void calculateTotalAmount() {
-        try {
-            this.totalAmount = orderItems.stream()
-                    .map(OrderItem::getLineAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-        } catch (ArithmeticException exception) {
-            throw new OrderException(OrderErrorCode.TOTAL_AMOUNT_OVERFLOW);
-        }
+    public boolean isExpiredStatus() {
+        return status == OrderStatus.EXPIRED;
     }
 
-    private void validateDuplicateProduct(OrderItem newOrderItem) {
-        Long newProductId = newOrderItem.getProductId();
-
-        boolean duplicated = this.orderItems.stream()
-                .anyMatch(orderItem -> orderItem.hasSameProduct(newProductId));
-
-        if (duplicated) {
-            throw new OrderException(OrderErrorCode.DUPLICATE_ORDER_ITEM);
-        }
-    }
-
-    private void validatePendingPaymentStatus() {
-        if (this.status != OrderStatus.PENDING_PAYMENT) {
-            throw new OrderException(OrderErrorCode.INVALID_ORDER_STATUS);
-        }
-    }
-
-    private static void validateOrderNumber(String orderNumber) {
-        if (orderNumber == null || orderNumber.isBlank()) {
-            throw new OrderException(OrderErrorCode.ORDER_NUMBER_REQUIRED);
-        }
-    }
-
-    private static void validateMember(Member member) {
-        if (member == null) {
-            throw new OrderException(OrderErrorCode.MEMBER_REQUIRED);
-        }
-    }
-
-    private static void validateOrderItem(OrderItem orderItem) {
-        if (orderItem == null) {
-            throw new OrderException(OrderErrorCode.ORDER_ITEM_REQUIRED);
-        }
-    }
-
+    /**
+     * expiresAt과 같은 시각부터 만료된 것으로 판단한다.
+     */
     public boolean isExpired(LocalDateTime now) {
-        if (now == null) {
-            throw new OrderException(
-                    OrderErrorCode.CURRENT_TIME_REQUIRED
-            );
-        }
+        validateCurrentTime(now);
 
         return !now.isBefore(expiresAt);
     }
 
+    /**
+     * 결제를 수행할 수 있는 주문인지 검증한다.
+     */
     public void validatePayable(LocalDateTime now) {
+        validateCurrentTime(now);
         validatePendingPaymentStatus();
 
         if (isExpired(now)) {
@@ -265,5 +272,120 @@ public class PurchaseOrder {
         }
 
         validateOrderReady();
+    }
+
+    private void calculateTotalAmount() {
+        BigDecimal calculatedAmount = orderItems.stream()
+                .map(OrderItem::getLineAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (calculatedAmount.signum() < 0) {
+            throw new OrderException(
+                    OrderErrorCode.TOTAL_AMOUNT_OVERFLOW
+            );
+        }
+
+        this.totalAmount = calculatedAmount;
+    }
+
+    private void validateDuplicateProduct(
+            OrderItem newOrderItem
+    ) {
+        Long newProductId = newOrderItem.getProductId();
+
+        boolean duplicated = orderItems.stream()
+                .anyMatch(orderItem ->
+                        orderItem.hasSameProduct(newProductId)
+                );
+
+        if (duplicated) {
+            throw new OrderException(
+                    OrderErrorCode.DUPLICATE_ORDER_ITEM
+            );
+        }
+    }
+
+    private void validatePendingPaymentStatus() {
+        if (!isPendingPayment()) {
+            throw new OrderException(
+                    OrderErrorCode.INVALID_ORDER_STATUS
+            );
+        }
+    }
+
+    private void validatePaidStatus() {
+        if (!isPaid()) {
+            throw new OrderException(
+                    OrderErrorCode.INVALID_ORDER_STATUS
+            );
+        }
+    }
+
+    private static void validateOrderNumber(
+            String orderNumber
+    ) {
+        if (orderNumber == null || orderNumber.isBlank()) {
+            throw new OrderException(
+                    OrderErrorCode.ORDER_NUMBER_REQUIRED
+            );
+        }
+    }
+
+    private static void validateMember(Member member) {
+        if (member == null) {
+            throw new OrderException(
+                    OrderErrorCode.MEMBER_REQUIRED
+            );
+        }
+    }
+
+    private static void validateOrderItem(
+            OrderItem orderItem
+    ) {
+        if (orderItem == null) {
+            throw new OrderException(
+                    OrderErrorCode.ORDER_ITEM_REQUIRED
+            );
+        }
+    }
+
+    private static void validateExpiresAt(
+            LocalDateTime expiresAt
+    ) {
+        if (expiresAt == null) {
+            throw new OrderException(
+                    OrderErrorCode.EXPIRES_AT_REQUIRED
+            );
+        }
+    }
+
+    private static void validatePaidAt(
+            LocalDateTime paidAt
+    ) {
+        if (paidAt == null) {
+            throw new OrderException(
+                    OrderErrorCode.PAID_AT_REQUIRED
+            );
+        }
+    }
+
+    private static void validateCancelledAt(
+            LocalDateTime cancelledAt
+    ) {
+        if (cancelledAt == null) {
+            throw new OrderException(
+                    OrderErrorCode.CANCELLED_AT_REQUIRED
+            );
+        }
+    }
+
+    private static void validateCurrentTime(
+            LocalDateTime now
+    ) {
+        if (now == null) {
+            throw new OrderException(
+                    OrderErrorCode.CURRENT_TIME_REQUIRED
+            );
+        }
     }
 }
