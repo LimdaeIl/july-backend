@@ -1,0 +1,465 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@adminEmail = admin@example.com
+@adminPassword = Password123!
+@memberPassword = Password123!
+
+
+### 회원가입
+# @name signUp
+POST http://localhost:8080/api/v1/auth/sign-up
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!",
+  "name": "테스트회원",
+  "phone": "01012345678",
+  "address": {
+    "city": "서울특별시",
+    "state": "강남구",
+    "zip": "06236",
+    "country": "대한민국"
+  }
+}
+
+### 1. 관리자 로그인
+# @name adminSignIn
+POST {{baseUrl}}/api/v1/auth/sign-in
+Content-Type: {{contentType}}
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+> {%
+client.global.set("adminAccessToken", response.body.data.accessToken);
+%}
+
+### 2. 회원 가입
+# @name memberSignUp
+POST {{baseUrl}}/api/v1/auth/sign-up
+Content-Type: {{contentType}}
+
+{
+  "email": "july-member-{{$timestamp}}@example.com",
+  "password": "{{memberPassword}}",
+  "name": "통합테스트회원",
+  "phone": "010{{$random.integer(10000000, 99999999)}}",
+  "address": {
+    "city": "서울특별시",
+    "state": "강남구",
+    "zip": "06236",
+    "country": "대한민국"
+  }
+}
+
+> {%
+client.global.set("memberEmail", response.body.data.email);
+%}
+
+### 3. 회원 로그인
+# @name memberSignIn
+POST {{baseUrl}}/api/v1/auth/sign-in
+Content-Type: {{contentType}}
+
+{
+  "email": "{{memberEmail}}",
+  "password": "{{memberPassword}}"
+}
+
+> {%
+client.global.set("memberAccessToken", response.body.data.accessToken);
+%}
+
+### 4. 내 정보 조회
+# @name getMe
+GET {{baseUrl}}/api/v1/members
+Authorization: Bearer {{memberAccessToken}}
+
+> {%
+%}
+
+### 5. 상품 1 생성
+# @name createProduct1
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "통합테스트 기계식 키보드 {{$timestamp}}",
+  "price": 129000,
+  "initialQuantity": 100
+}
+
+> {%
+const productId = response.body.data.productId ?? response.body.data.id;
+client.assert(productId != null, "상품 1 ID가 필요합니다.");
+client.global.set("productId1", productId);
+%}
+
+### 6. 상품 2 생성
+# @name createProduct2
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "통합테스트 게이밍 마우스 {{$timestamp}}",
+  "price": 59000,
+  "initialQuantity": 100
+}
+
+> {%
+const productId = response.body.data.productId ?? response.body.data.id;
+client.assert(productId != null, "상품 2 ID가 필요합니다.");
+client.global.set("productId2", productId);
+%}
+
+### 7. 상품 3 생성
+# @name createProduct3
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "통합테스트 USB 허브 {{$timestamp}}",
+  "price": 29000,
+  "initialQuantity": 100
+}
+
+> {%
+const productId = response.body.data.productId ?? response.body.data.id;
+client.assert(productId != null, "상품 3 ID가 필요합니다.");
+client.global.set("productId3", productId);
+%}
+
+### 8. 상품 1 정보 수정
+# @name updateProduct1
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId1}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "통합테스트 기계식 키보드 수정",
+  "price": 125000
+}
+
+### 9. 상품 1 판매 상태 변경
+# @name updateProduct1Status
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId1}}/status
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "ON_SALE"
+}
+
+### 10. 상품 2 판매 상태 변경
+# @name updateProduct2Status
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId2}}/status
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "ON_SALE"
+}
+
+### 11. 상품 3 판매 상태 변경
+# @name updateProduct3Status
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId3}}/status
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "ON_SALE"
+}
+
+### 12. 상품 1 재고 증가
+# @name increaseProduct1Inventory
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId1}}/inventory/increase
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 20
+}
+
+### 13. 상품 2 재고 증가
+# @name increaseProduct2Inventory
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId2}}/inventory/increase
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 20
+}
+
+### 14. 상품 3 재고 증가
+# @name increaseProduct3Inventory
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId3}}/inventory/increase
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 20
+}
+
+### 15. 상품 3 재고 감소
+# @name decreaseProduct3Inventory
+PATCH {{baseUrl}}/api/v1/admin/products/{{productId3}}/inventory/decrease
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 2
+}
+
+### 16. 상품 1 상세 조회
+# @name getProduct1
+GET {{baseUrl}}/api/v1/products/{{productId1}}
+
+### 17. 상품 페이지 목록 조회
+# @name getProductPage
+GET {{baseUrl}}/api/v1/products/page?page=0&size=20
+
+### 18. 상품 커서 목록 조회
+# @name getProductCursor
+GET {{baseUrl}}/api/v1/products/cursor?size=20
+
+### 19. 장바구니 최초 조회
+# @name getEmptyCart
+GET {{baseUrl}}/api/v1/cart
+Authorization: Bearer {{memberAccessToken}}
+
+### 20. 상품 1 장바구니 추가
+# @name addCartItem1
+POST {{baseUrl}}/api/v1/cart/items
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "productId": {{productId1}},
+  "quantity": 2
+}
+
+> {%
+const cartItemId = response.body.data.cartItemId ?? response.body.data.id;
+client.assert(cartItemId != null, "장바구니 상품 1 ID가 필요합니다.");
+client.global.set("cartItemId1", cartItemId);
+%}
+
+### 21. 상품 2 장바구니 추가
+# @name addCartItem2
+POST {{baseUrl}}/api/v1/cart/items
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "productId": {{productId2}},
+  "quantity": 1
+}
+
+> {%
+const cartItemId = response.body.data.cartItemId ?? response.body.data.id;
+client.global.set("cartItemId2", cartItemId);
+%}
+
+### 22. 상품 3 장바구니 추가
+# @name addCartItem3
+POST {{baseUrl}}/api/v1/cart/items
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "productId": {{productId3}},
+  "quantity": 3
+}
+
+> {%
+const cartItemId = response.body.data.cartItemId ?? response.body.data.id;
+client.global.set("cartItemId3", cartItemId);
+%}
+
+### 23. 동일 상품 재추가
+# @name addDuplicateCartItem1
+POST {{baseUrl}}/api/v1/cart/items
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "productId": {{productId1}},
+  "quantity": 3
+}
+
+### 24. 장바구니 조회
+# @name getCart
+GET {{baseUrl}}/api/v1/cart
+Authorization: Bearer {{memberAccessToken}}
+
+### 25. 상품 1 장바구니 수량 변경
+# @name updateCartItem1
+PATCH {{baseUrl}}/api/v1/cart/items/{{cartItemId1}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "quantity": 4
+}
+
+### 26. 상품 3 장바구니 삭제
+# @name deleteCartItem3
+DELETE {{baseUrl}}/api/v1/cart/items/{{cartItemId3}}
+Authorization: Bearer {{memberAccessToken}}
+
+
+### 27. 삭제 반영 장바구니 조회
+# @name getCartAfterDelete
+GET {{baseUrl}}/api/v1/cart
+Authorization: Bearer {{memberAccessToken}}
+
+### 28. 다중 상품 주문 생성
+# @name createOrder
+POST {{baseUrl}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "items": [
+    {
+      "productId": {{productId1}},
+      "quantity": 2
+    },
+    {
+      "productId": {{productId2}},
+      "quantity": 1
+    }
+  ]
+}
+
+> {%
+const orderId = response.body.data.orderId ?? response.body.data.id;
+client.global.set("orderId", orderId);
+%}
+
+### 29. 주문 상세 조회
+# @name getOrder
+GET {{baseUrl}}/api/v1/orders/{{orderId}}
+Authorization: Bearer {{memberAccessToken}}
+
+
+### 30. 내 주문 목록 조회
+# @name getOrders
+GET {{baseUrl}}/api/v1/orders?size=20
+Authorization: Bearer {{memberAccessToken}}
+
+
+### 31. 중복 상품 주문 실패
+# @name createDuplicateProductOrder
+POST {{baseUrl}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "items": [
+    {
+      "productId": {{productId1}},
+      "quantity": 1
+    },
+    {
+      "productId": {{productId1}},
+      "quantity": 1
+    }
+  ]
+}
+
+### 32. 재고 초과 주문 실패
+# @name createInsufficientInventoryOrder
+POST {{baseUrl}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "items": [
+    {
+      "productId": {{productId1}},
+      "quantity": 1000000
+    }
+  ]
+}
+
+
+### 33. 주문 취소
+# @name cancelOrder
+PATCH {{baseUrl}}/api/v1/orders/{{orderId}}/cancel
+Authorization: Bearer {{memberAccessToken}}
+
+### 34. 취소된 주문 다시 취소 실패
+# @name cancelOrderAgain
+PATCH {{baseUrl}}/api/v1/orders/{{orderId}}/cancel
+Authorization: Bearer {{memberAccessToken}}
+
+
+### 35. 장바구니 전체 비우기
+# @name clearCart
+DELETE {{baseUrl}}/api/v1/cart/items
+Authorization: Bearer {{memberAccessToken}}
+
+
+### 36. 빈 장바구니 확인
+# @name getClearedCart
+GET {{baseUrl}}/api/v1/cart
+Authorization: Bearer {{memberAccessToken}}
+
+
+### 37. 일반 회원의 관리자 API 접근 실패
+# @name memberCannotCreateProduct
+POST {{baseUrl}}/api/v1/admin/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{memberAccessToken}}
+
+{
+  "name": "권한 없는 상품 생성",
+  "price": 1000
+}
+
+### 38. 인증 없이 장바구니 조회 실패
+# @name unauthenticatedCart
+GET {{baseUrl}}/api/v1/cart
+
+
+### 39. 상품 1 삭제
+# @name deleteProduct1
+DELETE {{baseUrl}}/api/v1/admin/products/{{productId1}}
+Authorization: Bearer {{adminAccessToken}}
+
+### 40. 상품 2 삭제
+# @name deleteProduct2
+DELETE {{baseUrl}}/api/v1/admin/products/{{productId2}}
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+client.test("상품 2 삭제 성공", function () {
+    client.assert(
+        response.status === 200 || response.status === 204,
+        "상품 삭제 응답은 200 또는 204여야 합니다."
+    );
+});
+%}
+
+### 41. 상품 3 삭제
+# @name deleteProduct3
+DELETE {{baseUrl}}/api/v1/admin/products/{{productId3}}
+Authorization: Bearer {{adminAccessToken}}
+
+
+### 42. 삭제된 상품 상세 조회 실패
+# @name getDeletedProduct
+GET {{baseUrl}}/api/v1/products/{{productId3}}
+
+
+### 43. 회원 로그아웃
+# @name memberSignOut
+POST {{baseUrl}}/api/v1/auth/sign-out
+Authorization: Bearer {{memberAccessToken}}

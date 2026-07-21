@@ -18,7 +18,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findAllByProductIdIn(Collection<Long> productIds);
 
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT i
@@ -30,4 +29,15 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             @Param("productId") Long productId
     );
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT i
+            FROM Inventory i
+            JOIN FETCH i.product
+            WHERE i.product.id IN :productIds
+            ORDER BY i.product.id ASC
+            """)
+    List<Inventory> findAllByProductIdInForUpdate(
+            @Param("productIds") Collection<Long> productIds
+    );
 }

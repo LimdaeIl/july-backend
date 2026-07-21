@@ -32,6 +32,9 @@ public class OrderItem {
 
     private static final int MIN_ORDER_QUANTITY = 1;
     private static final BigDecimal MIN_PRICE = BigDecimal.ZERO;
+    private static final int AMOUNT_MAX_PRECISION = 19;
+    private static final int AMOUNT_MAX_SCALE = 0;
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,13 +51,13 @@ public class OrderItem {
     @Column(name = "product_name", nullable = false, length = 200)
     private String productName;
 
-    @Column(name = "order_price", nullable = false, precision = 19, scale = 2)
+    @Column(name = "order_price", nullable = false, precision = 19, scale = 0)
     private BigDecimal orderPrice;
 
     @Column(nullable = false)
     private int quantity;
 
-    @Column(name = "line_amount", nullable = false, precision = 19, scale = 2)
+    @Column(name = "line_amount", nullable = false, precision = 19, scale = 0)
     private BigDecimal lineAmount;
 
     private OrderItem(Product product, String productName, BigDecimal orderPrice, int quantity) {
@@ -112,12 +115,16 @@ public class OrderItem {
     }
 
     private static BigDecimal calculateLineAmount(BigDecimal orderPrice, int quantity) {
-        try {
-            return orderPrice.multiply(
-                    BigDecimal.valueOf(quantity)
-            );
-        } catch (ArithmeticException exception) {
-            throw new OrderException(OrderErrorCode.ORDER_ITEM_AMOUNT_OVERFLOW);
+        BigDecimal lineAmount = orderPrice.multiply(BigDecimal.valueOf(quantity));
+
+        validateAmountRange(lineAmount, OrderErrorCode.ORDER_ITEM_AMOUNT_OVERFLOW);
+
+        return lineAmount;
+    }
+
+    private static void validateAmountRange(BigDecimal amount, OrderErrorCode errorCode) {
+        if (amount.precision() > AMOUNT_MAX_PRECISION || amount.scale() > AMOUNT_MAX_SCALE) {
+            throw new OrderException(errorCode);
         }
     }
 

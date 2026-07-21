@@ -50,12 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(AUTH_PUBLIC).permitAll()
                         .requestMatchers(API_DOCS_PUBLIC).permitAll()
                         .requestMatchers(SYSTEM_PUBLIC).permitAll()
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/v1/products/*",
-                                "/api/v1/products/cursor/**",
-                                "/api/v1/products/page/**"
-                                ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

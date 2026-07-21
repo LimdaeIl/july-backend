@@ -42,3 +42,19 @@ security:
     issuer: ${JWT_ISSUER}
     accessTokenExpiration: ${JWT_ACCESS_TOKEN_EXPIRE}
     refreshTokenExpiration: ${JWT_REFRESH_TOKEN_EXPIRE}
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    disable-swagger-default-url: true
+
+  paths-to-match:
+    - /api/**

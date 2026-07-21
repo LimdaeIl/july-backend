@@ -34,13 +34,149 @@ Content-Type: application/json
   client.global.set("adminAccessToken", response.body.data.accessToken);
 %}
 
-### 상품 생성
+### 1. 상품 생성
+# @name createProduct1
 POST http://localhost:8080/api/v1/admin/products
 Content-Type: application/json
 Authorization: Bearer {{adminAccessToken}}
 
 {
-  "name": "한정판 기계식 키보드",
-  "price": 129000
+  "name": "게이밍 마우스",
+  "price": 59000,
+  "initialQuantity": 100
 }
 
+> {%
+  client.test("상품1 생성", function () {
+    client.assert(response.status === 201);
+  });
+
+  client.global.set("productId1", response.body.data.productId);
+%}
+
+###
+
+### 2. 상품 생성
+# @name createProduct2
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "32인치 모니터",
+  "price": 349000,
+  "initialQuantity": 100
+}
+
+> {%
+  client.test("상품2 생성", function () {
+    client.assert(response.status === 201);
+  });
+
+  client.global.set("productId2", response.body.data.productId);
+%}
+
+###
+
+### 3. 상품 생성
+# @name createProduct3
+POST http://localhost:8080/api/v1/admin/products
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "USB 허브",
+  "price": 29000,
+  "initialQuantity": 100
+}
+
+> {%
+  client.test("상품3 생성", function () {
+    client.assert(response.status === 201);
+  });
+
+  client.global.set("productId3", response.body.data.productId);
+%}
+
+###
+
+### 4. 상품 1 재고 증가
+PATCH http://localhost:8080/api/v1/admin/products/{{productId1}}/inventory/increase
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "quantity": 50
+}
+
+###
+
+### 5. 상품 2 재고 증가
+PATCH http://localhost:8080/api/v1/admin/products/{{productId2}}/inventory/increase
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "quantity": 50
+}
+
+###
+
+### 6. 상품 3 재고 증가
+PATCH http://localhost:8080/api/v1/admin/products/{{productId3}}/inventory/increase
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "quantity": 50
+}
+
+###
+
+### 7. 다중 상품 주문 생성
+POST http://localhost:8080/api/v1/orders
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "productId": {{productId1}},
+      "quantity": 2
+    },
+    {
+      "productId": {{productId2}},
+      "quantity": 1
+    },
+    {
+      "productId": {{productId3}},
+      "quantity": 3
+    }
+  ]
+}
+
+> {%
+  client.test("다중 상품 주문 성공", function () {
+    client.assert(response.status === 201);
+  });
+
+  client.global.set("orderId", response.body.data.orderId);
+%}
+
+###
+
+### 8. 주문 상세 조회
+GET http://localhost:8080/api/v1/orders/{{orderId}}
+Authorization: Bearer {{adminAccessToken}}
+
+###
+
+### 9. 주문 목록 조회
+GET http://localhost:8080/api/v1/orders
+Authorization: Bearer {{adminAccessToken}}
+
+###
+
+### 10. 주문 취소
+PATCH http://localhost:8080/api/v1/orders/{{orderId}}/cancel
+Authorization: Bearer {{adminAccessToken}}

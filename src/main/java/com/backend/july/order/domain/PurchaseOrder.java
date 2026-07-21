@@ -55,29 +55,21 @@ import lombok.NoArgsConstructor;
 @Entity
 public class PurchaseOrder extends BaseAuditEntity {
 
+    private static final int AMOUNT_MAX_PRECISION = 19;
+    private static final int AMOUNT_MAX_SCALE = 0;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(
-            name = "order_number",
-            nullable = false,
-            updatable = false,
-            length = 50,
-            unique = true
-    )
+    @Column(name = "order_number", nullable = false, updatable = false, length = 50, unique = true)
     private String orderNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(
-            name = "total_amount",
-            nullable = false,
-            precision = 19,
-            scale = 2
-    )
+    @Column(name = "total_amount", nullable = false, precision = 19, scale = 0)
     private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
@@ -132,8 +124,7 @@ public class PurchaseOrder extends BaseAuditEntity {
     }
 
     /**
-     * 주문 상품을 주문에 연결한다.
-     * 양방향 연관관계는 PurchaseOrder에서만 관리한다.
+     * 주문 상품을 주문에 연결한다. 양방향 연관관계는 PurchaseOrder에서만 관리한다.
      */
     public void addItem(OrderItem orderItem) {
         validateOrderItem(orderItem);
@@ -190,8 +181,7 @@ public class PurchaseOrder extends BaseAuditEntity {
     }
 
     /**
-     * 결제 승인 후 PG 환불까지 성공한 주문을 취소할 때 호출한다.
-     * 이 메서드는 일반 주문 취소 API에서 직접 호출하면 안 된다.
+     * 결제 승인 후 PG 환불까지 성공한 주문을 취소할 때 호출한다. 이 메서드는 일반 주문 취소 API에서 직접 호출하면 안 된다.
      */
     public void cancelPaidOrder(LocalDateTime cancelledAt) {
         validateCancelledAt(cancelledAt);
@@ -279,29 +269,22 @@ public class PurchaseOrder extends BaseAuditEntity {
                 .map(OrderItem::getLineAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (calculatedAmount.signum() < 0) {
-            throw new OrderException(
-                    OrderErrorCode.TOTAL_AMOUNT_OVERFLOW
-            );
+        if (calculatedAmount.signum() < 0 || calculatedAmount.precision() > AMOUNT_MAX_PRECISION
+                || calculatedAmount.scale() > AMOUNT_MAX_SCALE) {
+            throw new OrderException(OrderErrorCode.TOTAL_AMOUNT_OVERFLOW);
         }
 
         this.totalAmount = calculatedAmount;
     }
 
-    private void validateDuplicateProduct(
-            OrderItem newOrderItem
-    ) {
+    private void validateDuplicateProduct(OrderItem newOrderItem) {
         Long newProductId = newOrderItem.getProductId();
 
         boolean duplicated = orderItems.stream()
-                .anyMatch(orderItem ->
-                        orderItem.hasSameProduct(newProductId)
-                );
+                .anyMatch(orderItem -> orderItem.hasSameProduct(newProductId));
 
         if (duplicated) {
-            throw new OrderException(
-                    OrderErrorCode.DUPLICATE_ORDER_ITEM
-            );
+            throw new OrderException(OrderErrorCode.DUPLICATE_ORDER_ITEM);
         }
     }
 

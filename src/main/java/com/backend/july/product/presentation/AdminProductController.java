@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/admin/products")
 @RestController
-public class AdminProductController {
+public class AdminProductController implements AdminProductControllerDocs {
 
     private final CreateProductService createProductService;
     private final UpdateProductService updateProductService;
