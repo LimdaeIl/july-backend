@@ -119,8 +119,6 @@ public class Payment {
         this.status = PaymentStatus.CANCELLED;
         this.cancellationReason = cancellationReason;
         this.cancelledAt = cancelledAt;
-
-        order.cancel();
     }
 
     public boolean belongsTo(Long orderId) {

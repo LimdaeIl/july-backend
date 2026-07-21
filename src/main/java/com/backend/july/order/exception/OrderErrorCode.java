@@ -23,7 +23,12 @@ public enum OrderErrorCode implements ErrorCode {
     INVALID_ORDER_PRICE(HttpStatus.BAD_REQUEST, "주문 가격은 0 이상이어야 합니다."),
     INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "주문 수량은 1 이상이어야 합니다."),
     ORDER_ITEM_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "주문 상품이 이미 다른 주문에 연결되어 있습니다."),
-    ORDER_ITEM_AMOUNT_OVERFLOW(HttpStatus.INTERNAL_SERVER_ERROR, "주문 상품 금액이 허용 범위를 초과했습니다."),;
+    ORDER_ITEM_AMOUNT_OVERFLOW(HttpStatus.INTERNAL_SERVER_ERROR, "주문 상품 금액이 허용 범위를 초과했습니다."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
+    CURRENT_TIME_REQUIRED(HttpStatus.BAD_REQUEST, "현재 시간은 필수입니다."),
+    ORDER_EXPIRED(HttpStatus.CONFLICT, "결제 가능 시간이 만료된 주문입니다."),
+    CANCELLED_AT_REQUIRED(HttpStatus.BAD_REQUEST, "주문 취소 시각은 필수입니다."),
+    EXPIRES_AT_REQUIRED(HttpStatus.BAD_REQUEST, "주문 만료 시각은 필수입니다.");
 
     private final HttpStatus status;
     private final String message;

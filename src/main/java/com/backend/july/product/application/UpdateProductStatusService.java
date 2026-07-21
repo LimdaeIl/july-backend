@@ -20,8 +20,14 @@ public class UpdateProductStatusService {
     @Transactional
     public UpdateProductStatusResponse update(Long productId, UpdateProductStatusRequest request) {
         Product product = findProduct(productId);
-        product.validateNotDeleted();
-        product.changeStatus(ProductStatus.valueOf(request.status().name()));
+
+        product.changeStatus(
+                switch (request.status()) {
+                    case ON_SALE -> ProductStatus.ON_SALE;
+                    case HIDDEN -> ProductStatus.HIDDEN;
+                }
+        );
+
         return UpdateProductStatusResponse.from(product);
     }
 
