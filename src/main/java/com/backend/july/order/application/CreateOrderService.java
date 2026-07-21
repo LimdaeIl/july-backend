@@ -29,6 +29,8 @@ public class CreateOrderService {
     private final OrderNumberGenerator orderNumberGenerator;
     private final Clock clock;
 
+    private final long expiresMinutes = 10L;
+
     @Transactional
     public CreateOrderResponse create(Long memberId, Long productId, int quantity) {
         Member member = memberRepository.findById(memberId)
@@ -46,7 +48,7 @@ public class CreateOrderService {
         String orderNumber = orderNumberGenerator.generate();
 
         LocalDateTime now = LocalDateTime.now(clock);
-        LocalDateTime expiresAt = now.plusMinutes(10);
+        LocalDateTime expiresAt = now.plusMinutes(expiresMinutes);
 
         PurchaseOrder order = PurchaseOrder.create(orderNumber, member, expiresAt);
         OrderItem orderItem = OrderItem.create(product, quantity);

@@ -27,7 +27,8 @@ public enum OrderErrorCode implements ErrorCode {
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
     CURRENT_TIME_REQUIRED(HttpStatus.BAD_REQUEST, "현재 시간은 필수입니다."),
     ORDER_EXPIRED(HttpStatus.CONFLICT, "결제 가능 시간이 만료된 주문입니다."),
-    CANCELLED_AT_REQUIRED(HttpStatus.BAD_REQUEST, "주문 취소 시각은 필수입니다.");
+    CANCELLED_AT_REQUIRED(HttpStatus.BAD_REQUEST, "주문 취소 시각은 필수입니다."),
+    EXPIRES_AT_REQUIRED(HttpStatus.BAD_REQUEST, "주문 만료 시각은 필수입니다.");
 
     private final HttpStatus status;
     private final String message;

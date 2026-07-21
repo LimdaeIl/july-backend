@@ -94,13 +94,18 @@ public class PurchaseOrder {
         this.status = OrderStatus.PENDING_PAYMENT;
     }
 
+    private void validateExpiresAt(LocalDateTime expiresAt) {
+        if (expiresAt == null) {
+            throw new OrderException(OrderErrorCode.EXPIRES_AT_REQUIRED);
+        }
+    }
+
     public static PurchaseOrder create(String orderNumber, Member member, LocalDateTime expiresAt) {
         return new PurchaseOrder(orderNumber, member, expiresAt);
     }
 
     /**
-     * OrderItem 생성 후 주문에 연결할 때 사용한다.
-     * 양방향 연관관계 편의 메서드는 PurchaseOrder 한 곳에서 관리한다.
+     * OrderItem 생성 후 주문에 연결할 때 사용한다. 양방향 연관관계 편의 메서드는 PurchaseOrder 한 곳에서 관리한다.
      */
     public void addItem(OrderItem orderItem) {
         validateOrderItem(orderItem);
@@ -121,8 +126,7 @@ public class PurchaseOrder {
     }
 
     /**
-     * 주문 생성을 마치기 전 최소 한 개 이상의 상품이 있는지 검증한다.
-     * 주문 저장 직전에 서비스에서 호출할 수 있다.
+     * 주문 생성을 마치기 전 최소 한 개 이상의 상품이 있는지 검증한다. 주문 저장 직전에 서비스에서 호출할 수 있다.
      */
     public void validateOrderReady() {
         if (orderItems.isEmpty()) {
@@ -137,7 +141,7 @@ public class PurchaseOrder {
     }
 
 
-     // 결제 승인 완료 후 주문 상태를 변경한다.
+    // 결제 승인 완료 후 주문 상태를 변경한다.
     public void pay() {
         validatePendingPaymentStatus();
         validateOrderReady();
@@ -146,15 +150,16 @@ public class PurchaseOrder {
     }
 
     /**
-     * 주문을 취소한다.
-     * 결제 대기 또는 결제 완료 주문만 취소할 수 있도록 제한한다.
+     * 주문을 취소한다. 결제 대기 또는 결제 완료 주문만 취소할 수 있도록 제한한다.
      */
     public void cancel(LocalDateTime cancelledAt) {
         if (cancelledAt == null) {
             throw new OrderException(OrderErrorCode.CANCELLED_AT_REQUIRED);
         }
 
-        validatePendingPaymentStatus();
+        if (this.status != OrderStatus.PENDING_PAYMENT && this.status != OrderStatus.PAID) {
+            throw new OrderException(OrderErrorCode.INVALID_ORDER_STATUS);
+        }
 
         this.status = OrderStatus.CANCELLED;
         this.cancelledAt = cancelledAt;
@@ -249,6 +254,7 @@ public class PurchaseOrder {
 
         return !now.isBefore(expiresAt);
     }
+
     public void validatePayable(LocalDateTime now) {
         validatePendingPaymentStatus();
 
