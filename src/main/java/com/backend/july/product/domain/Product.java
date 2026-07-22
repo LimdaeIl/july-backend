@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -106,7 +107,7 @@ public class Product extends BaseAuditEntity {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "price");
         }
 
-        BigDecimal normalizedPrice = price.stripTrailingZeros();
+        BigDecimal normalizedPrice = price.setScale(0, RoundingMode.UNNECESSARY);
 
         if (normalizedPrice.scale() > 0) {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "price");
