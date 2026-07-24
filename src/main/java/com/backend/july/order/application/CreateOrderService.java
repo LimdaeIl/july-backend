@@ -40,25 +40,22 @@ public class CreateOrderService {
     private final Clock clock;
 
     @Transactional
-    public CreateOrderResponse create(
-            Long memberId,
-            List<OrderItemRequest> requestedItems
-    ) {
+    public CreateOrderResponse create(Long memberId, List<OrderItemRequest> requestedItems) {
         validateRequestedItems(requestedItems);
         validateDuplicateProducts(requestedItems);
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() ->
-                        new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
-                );
+                .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         List<Long> productIds = requestedItems.stream()
                 .map(OrderItemRequest::productId)
                 .sorted()
                 .toList();
 
-        List<Inventory> inventories =
-                inventoryRepository.findAllByProductIdInForUpdate(productIds);
+        List<Inventory> inventories = inventoryRepository.findAllByProductIdInForUpdate(productIds);
+//        List<Inventory> inventories = inventoryRepository.findAllByProductIdIn(productIds);
+
+
 
         validateAllInventoriesExist(productIds, inventories);
 
@@ -70,50 +67,35 @@ public class CreateOrderService {
         LocalDateTime expiresAt =
                 now.plusMinutes(ORDER_EXPIRATION_MINUTES);
 
-        PurchaseOrder order = PurchaseOrder.create(
-                orderNumber,
-                member,
-                expiresAt
-        );
+        PurchaseOrder order = PurchaseOrder.create(orderNumber, member, expiresAt);
 
         for (OrderItemRequest requestedItem : requestedItems) {
-            Inventory inventory =
-                    inventoryByProductId.get(requestedItem.productId());
+            Inventory inventory = inventoryByProductId.get(requestedItem.productId());
 
             Product product = inventory.getProduct();
 
             product.validateOrderable();
             inventory.decrease(requestedItem.quantity());
 
-            OrderItem orderItem = OrderItem.create(
-                    product,
-                    requestedItem.quantity()
-            );
+            OrderItem orderItem = OrderItem.create(product, requestedItem.quantity());
 
             order.addItem(orderItem);
         }
 
         order.validateOrderReady();
 
-        PurchaseOrder savedOrder =
-                purchaseOrderRepository.save(order);
+        PurchaseOrder savedOrder = purchaseOrderRepository.save(order);
 
         return CreateOrderResponse.from(savedOrder);
     }
 
-    private static void validateRequestedItems(
-            List<OrderItemRequest> requestedItems
-    ) {
+    private static void validateRequestedItems(List<OrderItemRequest> requestedItems) {
         if (requestedItems == null || requestedItems.isEmpty()) {
-            throw new OrderException(
-                    OrderErrorCode.ORDER_ITEMS_EMPTY
-            );
+            throw new OrderException(OrderErrorCode.ORDER_ITEMS_EMPTY);
         }
     }
 
-    private static void validateDuplicateProducts(
-            List<OrderItemRequest> requestedItems
-    ) {
+    private static void validateDuplicateProducts(List<OrderItemRequest> requestedItems) {
         Set<Long> productIds = new HashSet<>();
 
         for (OrderItemRequest requestedItem : requestedItems) {
@@ -130,22 +112,15 @@ public class CreateOrderService {
             List<Inventory> inventories
     ) {
         if (inventories.size() != requestedProductIds.size()) {
-            throw new InventoryException(
-                    InventoryErrorCode.INVENTORY_NOT_FOUND
-            );
+            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
     }
 
-    private static Map<Long, Inventory> createInventoryMap(
-            List<Inventory> inventories
-    ) {
+    private static Map<Long, Inventory> createInventoryMap(List<Inventory> inventories) {
         Map<Long, Inventory> inventoryByProductId = new HashMap<>();
 
         for (Inventory inventory : inventories) {
-            inventoryByProductId.put(
-                    inventory.getProduct().getId(),
-                    inventory
-            );
+            inventoryByProductId.put(inventory.getProduct().getId(), inventory);
         }
 
         return inventoryByProductId;

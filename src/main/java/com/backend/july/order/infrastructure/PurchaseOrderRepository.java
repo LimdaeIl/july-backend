@@ -77,4 +77,24 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     List<PurchaseOrder> findAllWithItemsByIdIn(
             @Param("orderIds") List<Long> orderIds
     );
+
+    @Query("""
+            SELECT COUNT(DISTINCT o.id)
+            FROM PurchaseOrder o
+            JOIN o.orderItems oi
+            WHERE oi.product.id = :productId
+            """)
+    long countByProductId(
+            @Param("productId") Long productId
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(oi.quantity), 0)
+            FROM PurchaseOrder o
+            JOIN o.orderItems oi
+            WHERE oi.product.id = :productId
+            """)
+    long sumOrderedQuantityByProductId(
+            @Param("productId") Long productId
+    );
 }

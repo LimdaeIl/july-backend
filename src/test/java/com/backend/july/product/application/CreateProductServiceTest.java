@@ -1,6 +1,6 @@
 package com.backend.july.product.application;
 
-import static com.backend.july.product.fixture.ProductFixture.productWithId;
+import static com.backend.july.fixture.ProductFixture.productWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,7 +15,7 @@ import com.backend.july.inventory.infrastructure.InventoryRepository;
 import com.backend.july.product.domain.Product;
 import com.backend.july.product.domain.ProductStatus;
 import com.backend.july.product.exception.ProductException;
-import com.backend.july.product.fixture.ProductFixture;
+import com.backend.july.fixture.ProductFixture;
 import com.backend.july.product.infrastructure.ProductRepository;
 import com.backend.july.product.presentation.dto.request.CreateProductRequest;
 import com.backend.july.product.presentation.dto.response.CreateProductResponse;
