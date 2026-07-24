@@ -95,7 +95,7 @@ public class Product extends BaseAuditEntity {
 
         String trimmedName = name.trim();
 
-        if (trimmedName.length() > 100) {
+        if (trimmedName.length() < 2 || trimmedName.length() > 100) {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "name");
         }
 
@@ -107,13 +107,12 @@ public class Product extends BaseAuditEntity {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "price");
         }
 
-        BigDecimal normalizedPrice = price.setScale(0, RoundingMode.UNNECESSARY);
-
-        if (normalizedPrice.scale() > 0) {
+        // ArithmeticException이 너무 범용적인 기술 예외이기 때문에, 그대로 try - catch 사용
+        try {
+            return price.setScale(0, RoundingMode.UNNECESSARY);
+        } catch (ArithmeticException exception) {
             throw new ProductException(ProductErrorCode.VALIDATE_FIELD, "price");
         }
-
-        return normalizedPrice;
     }
 
     public void delete() {
