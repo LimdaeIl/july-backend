@@ -6,6 +6,9 @@ spring:
   application:
     name: july-app
 
+  config:
+    import: optional:file:./.env[.properties]
+
   profiles:
     active: dev
 
