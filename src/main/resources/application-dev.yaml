@@ -35,6 +35,13 @@ spring:
       repositories:
         enabled: false
 
+  cache:
+    type: none
+    cache-names:
+      - productDetail
+    redis:
+      time-to-live: 1m
+      cache-null-values: false
 
 security:
   jwt:
