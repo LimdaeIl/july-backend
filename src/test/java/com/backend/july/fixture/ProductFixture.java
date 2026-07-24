@@ -1,4 +1,4 @@
-package com.backend.july.product.fixture;
+package com.backend.july.fixture;
 
 import com.backend.july.product.domain.Product;
 import com.backend.july.product.presentation.dto.request.CreateProductRequest;
