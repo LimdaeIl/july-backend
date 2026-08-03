@@ -41,88 +41,82 @@ public class GetProductsService {
                 condition.sortType().toSort()
         );
 
-        Page<Product> products = findProducts(
-                condition.sellerId(),
-                pageable
-        );
+        Page<Product> products = findProductsByPage(condition, pageable);
+
         Map<Long, Inventory> inventoryMap = getInventoryMap(products.getContent());
 
         return PageResponse.from(
                 products,
                 product -> ProductSummaryResponse.of(
                         product,
-                        getInventory(inventoryMap, product.getId())
-                )
+                        getInventory(inventoryMap, product.getId()))
         );
     }
 
-    private Page<Product> findProducts(Long sellerId, Pageable pageable) {
-        if (sellerId == null) {
-            return productRepository.findAllByStatus(ProductStatus.ON_SALE, pageable);
-        }
-
-        return productRepository.findAllByStatusAndCreatedBy(
+    private Page<Product> findProductsByPage(GetProductsCondition condition, Pageable pageable) {
+        return productRepository.findAllByCondition(
                 ProductStatus.ON_SALE,
-                sellerId,
+                condition.sellerId(),
+                condition.keyword(),
                 pageable
         );
     }
 
     @Transactional(readOnly = true)
     public CursorResponse<ProductSummaryResponse, ProductCursor> getProductsByCursor(
-            GetProductsCursorCondition condition
-    ) {
-        List<Product> queriedProducts = findProducts(condition);
+            GetProductsCursorCondition condition) {
+        List<Product> queriedProducts = findProductsByCursor(condition);
 
         boolean hasNext = queriedProducts.size() > condition.size();
 
         List<Product> products = extractContent(queriedProducts, condition.size(), hasNext);
+
         ProductCursor nextCursor = createNextCursor(products, condition.sortType(), hasNext);
 
         Map<Long, Inventory> inventoryMap = getInventoryMap(products);
 
         List<ProductSummaryResponse> content = products.stream()
-                .map(product -> ProductSummaryResponse.of(
-                        product,
-                        getInventory(inventoryMap, product.getId())
-                ))
+                .map(product ->
+                        ProductSummaryResponse.of(
+                                product,
+                                getInventory(inventoryMap, product.getId())
+                        )
+                )
                 .toList();
 
         return CursorResponse.of(content, nextCursor, hasNext);
     }
 
-    private List<Product> findProducts(
-            GetProductsCursorCondition condition
-    ) {
-        PageRequest limit = PageRequest.of(
-                0,
-                condition.size() + 1
-        );
+    private List<Product> findProductsByCursor(GetProductsCursorCondition condition) {
+        PageRequest limit = PageRequest.of(0, condition.size() + 1);
 
         return switch (condition.sortType()) {
-            case LATEST -> productRepository.findAllByLatestCursor(
-                    ProductStatus.ON_SALE,
-                    condition.sellerId(),
-                    condition.cursorCreatedAt(),
-                    condition.cursorId(),
-                    limit
-            );
+            case LATEST -> productRepository
+                    .findAllByLatestCursor(
+                            ProductStatus.ON_SALE,
+                            condition.sellerId(),
+                            condition.cursorCreatedAt(),
+                            condition.cursorId(),
+                            limit
+                    );
 
-            case PRICE_LOW -> productRepository.findAllByPriceLowCursor(
-                    ProductStatus.ON_SALE,
-                    condition.sellerId(),
-                    condition.cursorPrice(),
-                    condition.cursorId(),
-                    limit
-            );
+            case PRICE_LOW -> productRepository
+                    .findAllByPriceLowCursor(
+                            ProductStatus.ON_SALE,
+                            condition.sellerId(),
+                            condition.cursorPrice(),
+                            condition.cursorId(),
+                            limit
+                    );
 
-            case PRICE_HIGH -> productRepository.findAllByPriceHighCursor(
-                    ProductStatus.ON_SALE,
-                    condition.sellerId(),
-                    condition.cursorPrice(),
-                    condition.cursorId(),
-                    limit
-            );
+            case PRICE_HIGH -> productRepository
+                    .findAllByPriceHighCursor(
+                            ProductStatus.ON_SALE,
+                            condition.sellerId(),
+                            condition.cursorPrice(),
+                            condition.cursorId(),
+                            limit
+                    );
         };
     }
 
@@ -143,23 +137,39 @@ public class GetProductsService {
         Product lastProduct = products.get(products.size() - 1);
 
         return switch (sortType) {
-            case LATEST -> ProductCursor.latest(lastProduct.getId(), lastProduct.getCreatedAt());
-            case PRICE_LOW, PRICE_HIGH ->
-                    ProductCursor.price(lastProduct.getId(), lastProduct.getPrice());
+            case LATEST -> ProductCursor.latest(
+                    lastProduct.getId(),
+                    lastProduct.getCreatedAt()
+            );
+
+            case PRICE_LOW, PRICE_HIGH -> ProductCursor.price(
+                    lastProduct.getId(),
+                    lastProduct.getPrice()
+            );
         };
     }
 
     private Map<Long, Inventory> getInventoryMap(List<Product> products) {
+        if (products.isEmpty()) {
+            return Map.of();
+        }
+
         List<Long> productIds = products.stream()
                 .map(Product::getId)
                 .toList();
 
-        return inventoryRepository.findAllByProductIdIn(productIds)
+        return inventoryRepository
+                .findAllByProductIdIn(productIds)
                 .stream()
-                .collect(Collectors.toMap(
-                        inventory -> inventory.getProduct().getId(),
-                        Function.identity()
-                ));
+                .collect(
+                        Collectors.toMap(
+                                inventory ->
+                                        inventory
+                                                .getProduct()
+                                                .getId(),
+                                Function.identity()
+                        )
+                );
     }
 
     private Inventory getInventory(Map<Long, Inventory> inventoryMap, Long productId) {

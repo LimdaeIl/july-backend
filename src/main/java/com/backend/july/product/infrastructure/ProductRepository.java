@@ -14,14 +14,40 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    Page<Product> findAllByStatus(
-            ProductStatus status,
-            Pageable pageable
-    );
-
-    Page<Product> findAllByStatusAndCreatedBy(
-            ProductStatus status,
-            Long createdBy,
+    @Query(
+            value = """
+                   SELECT p
+                   FROM Product p
+                   WHERE p.status = :status
+                     AND (
+                           :sellerId IS NULL 
+                           OR p.createdBy = :sellerId
+                     )
+                     AND (
+                           :keyword IS NULL 
+                           OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                                      )
+                    """,
+            countQuery = """
+                SELECT COUNT(p)
+                FROM Product p
+                WHERE p.status = :status
+                  AND (
+                        :sellerId IS NULL
+                        OR p.createdBy = :sellerId
+                  )
+                  AND (
+                        :keyword IS NULL
+                        OR LOWER(p.name) LIKE LOWER(
+                            CONCAT('%', :keyword, '%')
+                        )
+                  )
+                """
+    )
+    Page<Product> findAllByCondition(
+            @Param("status") ProductStatus status,
+            @Param("sellerId") Long sellerId,
+            @Param("keyword") String keyword,
             Pageable pageable
     );
 
