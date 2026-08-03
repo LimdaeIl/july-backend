@@ -4,7 +4,6 @@ package com.backend.july.order.infrastructure;
 import com.backend.july.order.domain.OrderStatus;
 import com.backend.july.order.domain.PurchaseOrder;
 import jakarta.persistence.LockModeType;
-import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
