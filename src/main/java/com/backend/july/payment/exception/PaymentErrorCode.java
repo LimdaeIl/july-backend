@@ -1,4 +1,3 @@
-
 package com.backend.july.payment.exception;
 
 import com.backend.july.common.exception.ErrorCode;
