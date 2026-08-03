@@ -36,10 +36,7 @@ public class PaymentController {
             @RequestBody @Valid PreparePaymentRequest request
     ) {
         PreparePaymentResponse response =
-                preparePaymentService.prepare(
-                        member.memberId(),
-                        request.orderId()
-                );
+                preparePaymentService.prepare(member.memberId(), request.orderId());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -55,10 +52,7 @@ public class PaymentController {
             @RequestBody @Valid ConfirmPaymentRequest request
     ) {
         ConfirmPaymentResponse response =
-                confirmPaymentService.confirm(
-                        member.memberId(),
-                        request
-                );
+                confirmPaymentService.confirm(member.memberId(), request);
 
         return ResponseEntity.ok(
                 ApiResponse.ok(
@@ -74,11 +68,7 @@ public class PaymentController {
             @PathVariable Long paymentId,
             @RequestBody @Valid CancelPaymentRequest request
     ) {
-        cancelPaymentService.cancel(
-                member.memberId(),
-                paymentId,
-                request.cancelReason()
-        );
+        cancelPaymentService.cancel(member.memberId(), paymentId, request.cancelReason());
 
         return ResponseEntity.noContent().build();
     }

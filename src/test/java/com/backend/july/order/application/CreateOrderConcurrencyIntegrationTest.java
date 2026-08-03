@@ -12,9 +12,9 @@ import com.backend.july.inventory.exception.InventoryException;
 import com.backend.july.inventory.infrastructure.InventoryRepository;
 import com.backend.july.member.domain.Member;
 import com.backend.july.member.infrastructure.MemberRepository;
-import com.backend.july.order.infrastructure.PurchaseOrderRepository;
 import com.backend.july.product.domain.Product;
 import com.backend.july.product.infrastructure.ProductRepository;
+import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -39,6 +39,9 @@ class CreateOrderConcurrencyIntegrationTest {
     private static final int CONCURRENT_REQUESTS = 200;
     private static final int ORDER_QUANTITY = 1;
 
+    @Autowired
+    private EntityManager em; // EntityManager 주입 추가
+
     /*
      * 동시성 문제는 비결정적이므로 여러 번 실행한다.
      * 너무 크게 설정하면 테스트 시간이 길어질 수 있다.
@@ -52,21 +55,18 @@ class CreateOrderConcurrencyIntegrationTest {
     private final InventoryRepository inventoryRepository;
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
-    private final PurchaseOrderRepository purchaseOrderRepository;
 
     @Autowired
     CreateOrderConcurrencyIntegrationTest(
             CreateOrderService createOrderService,
             InventoryRepository inventoryRepository,
             ProductRepository productRepository,
-            MemberRepository memberRepository,
-            PurchaseOrderRepository purchaseOrderRepository
-    ) {
+            MemberRepository memberRepository
+            ) {
         this.createOrderService = createOrderService;
         this.inventoryRepository = inventoryRepository;
         this.productRepository = productRepository;
         this.memberRepository = memberRepository;
-        this.purchaseOrderRepository = purchaseOrderRepository;
     }
 
     @Disabled
@@ -120,7 +120,8 @@ class CreateOrderConcurrencyIntegrationTest {
                 product("동시성 테스트 상품-" + round, ProductFixture.DEFAULT_PRODUCT_PRICE)
         );
 
-        Inventory savedInventory = inventoryRepository.save(inventory(savedProduct, INITIAL_INVENTORY));
+        Inventory savedInventory = inventoryRepository.save(
+                inventory(savedProduct, INITIAL_INVENTORY));
 
         List<Member> savedMembers = createMembers(round, CONCURRENT_REQUESTS);
 
@@ -152,7 +153,8 @@ class CreateOrderConcurrencyIntegrationTest {
         return members;
     }
 
-    private ConcurrencyResult executeConcurrentOrders(ConcurrencyTestData testData) throws Exception {
+    private ConcurrencyResult executeConcurrentOrders(ConcurrencyTestData testData)
+            throws Exception {
 
         ExecutorService executorService = Executors.newFixedThreadPool(CONCURRENT_REQUESTS);
 
@@ -197,7 +199,8 @@ class CreateOrderConcurrencyIntegrationTest {
 
             startLatch.countDown();
 
-            boolean allWorkersCompleted = doneLatch.await(COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            boolean allWorkersCompleted = doneLatch.await(COMPLETION_TIMEOUT_SECONDS,
+                    TimeUnit.SECONDS);
 
             long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
 
@@ -218,11 +221,9 @@ class CreateOrderConcurrencyIntegrationTest {
              */
             Inventory finalInventory = inventoryRepository.findByProductId(testData.productId())
                     .orElseThrow();
-
-            long savedOrderCount = purchaseOrderRepository.countByProductId(testData.productId());
-
-            long orderedQuantity = purchaseOrderRepository.sumOrderedQuantityByProductId(
-                    testData.productId());
+// 테스트 내부 전용 JPQL로 수량 및 건수 집계
+            long savedOrderCount = countOrdersByProductIdForTest(testData.productId());
+            long orderedQuantity = sumOrderedQuantityByProductIdForTest(testData.productId());
 
             return new ConcurrencyResult(
                     INITIAL_INVENTORY,
@@ -242,6 +243,33 @@ class CreateOrderConcurrencyIntegrationTest {
                 System.err.println("ExecutorService가 정상적으로 종료되지 않았습니다.");
             }
         }
+    }
+
+    // --- 헬퍼 메서드 추가 ---
+    private long countOrdersByProductIdForTest(Long productId) {
+        Long count = em.createQuery("""
+                        SELECT COUNT(DISTINCT o.id)
+                        FROM PurchaseOrder o
+                        JOIN o.orderItems oi
+                        WHERE oi.product.id = :productId
+                        """, Long.class)
+                .setParameter("productId", productId)
+                .getSingleResult();
+
+        return count != null ? count : 0L;
+    }
+
+    private long sumOrderedQuantityByProductIdForTest(Long productId) {
+        Long sum = em.createQuery("""
+                        SELECT COALESCE(SUM(oi.quantity), 0)
+                        FROM PurchaseOrder o
+                        JOIN o.orderItems oi
+                        WHERE oi.product.id = :productId
+                        """, Long.class)
+                .setParameter("productId", productId)
+                .getSingleResult();
+
+        return sum != null ? sum : 0L;
     }
 
     private static String summarizeExceptions(ConcurrentLinkedQueue<Throwable> exceptions) {
@@ -311,7 +339,7 @@ class CreateOrderConcurrencyIntegrationTest {
         }
     }
 
-//    @Disabled
+    //    @Disabled
     @Test
     @DisplayName("비관적 락을 적용하면 동시 주문에서도 재고 정합성이 유지된다.")
     void stock_consistency_is_maintained_with_pessimistic_lock()

@@ -1,82 +1,84 @@
 package com.backend.july.payment.infrastructure.toss;
 
+import com.backend.july.payment.exception.PaymentErrorCode;
+import com.backend.july.payment.exception.PaymentException;
 import com.backend.july.payment.infrastructure.toss.dto.TossCancelRequest;
 import com.backend.july.payment.infrastructure.toss.dto.TossConfirmRequest;
 import com.backend.july.payment.infrastructure.toss.dto.TossPaymentResponse;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
-@RequiredArgsConstructor
 @Component
 public class TossPaymentsClient {
 
-    private final TossPaymentsProperties properties;
+    private static final String TOSS_CONFIRM_URL = "/v1/payments/confirm";
+    private static final String TOSS_CANCEL_URL = "/v1/payments/{paymentKey}/cancel";
 
-    public TossPaymentResponse confirm(
-            String paymentKey,
-            String orderId,
-            java.math.BigDecimal amount
-    ) {
-        TossConfirmRequest request = new TossConfirmRequest(
-                paymentKey,
-                orderId,
-                amount
-        );
+    private final RestClient restClient;
 
-        return restClient()
-                .post()
-                .uri("/v1/payments/confirm")
-                .body(request)
-                .retrieve()
-                .body(TossPaymentResponse.class);
-    }
+    public TossPaymentsClient(TossPaymentsProperties properties) {
+        String authorizationHeader = createAuthorizationHeader(properties.secretKey());
 
-    public TossPaymentResponse cancel(
-            String paymentKey,
-            String cancelReason
-    ) {
-        TossCancelRequest request =
-                new TossCancelRequest(cancelReason);
-
-        return restClient()
-                .post()
-                .uri("/v1/payments/{paymentKey}/cancel", paymentKey)
-                .body(request)
-                .retrieve()
-                .body(TossPaymentResponse.class);
-    }
-
-    private RestClient restClient() {
-        return RestClient.builder()
+        this.restClient = RestClient.builder()
                 .baseUrl(properties.apiUrl())
-                .defaultHeader(
-                        HttpHeaders.AUTHORIZATION,
-                        createAuthorizationHeader()
-                )
-                .defaultHeader(
-                        HttpHeaders.CONTENT_TYPE,
-                        MediaType.APPLICATION_JSON_VALUE
-                )
+                .defaultHeader(HttpHeaders.AUTHORIZATION, authorizationHeader)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
 
-    private String createAuthorizationHeader() {
-        String credentials =
-                properties.secretKey() + ":";
+    public TossPaymentResponse confirm(String paymentKey, String orderId, BigDecimal amount) {
+        TossConfirmRequest request = new TossConfirmRequest(paymentKey, orderId, amount);
 
-        String encoded =
-                Base64.getEncoder()
-                        .encodeToString(
-                                credentials.getBytes(
-                                        StandardCharsets.UTF_8
-                                )
-                        );
+        try {
+            return restClient.post()
+                    .uri(TOSS_CONFIRM_URL)
+                    .body(request)
+                    .retrieve()
+                    .body(TossPaymentResponse.class);
 
+        } catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().is4xxClientError()) {
+                throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_CONFIRM_FAILED);
+            }
+            throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_CONFIRM_UNCERTAIN);
+
+        } catch (RestClientException exception) {
+            throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_CONFIRM_UNCERTAIN);
+        }
+    }
+
+    public TossPaymentResponse cancel(String paymentKey, String cancelReason) {
+        TossCancelRequest request = TossCancelRequest.from(cancelReason);
+
+        try {
+            return restClient.post()
+                    .uri(TOSS_CANCEL_URL, paymentKey)
+                    .body(request)
+                    .retrieve()
+                    .body(TossPaymentResponse.class);
+
+        } catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().is4xxClientError()) {
+                throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_NOT_CANCELLED);
+            }
+            throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_CANCEL_FAILED);
+
+        } catch (RestClientException exception) {
+            throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_CANCEL_FAILED);
+        }
+    }
+
+    private String createAuthorizationHeader(String secretKey) {
+        String credentials = secretKey + ":";
+        String encoded = Base64.getEncoder()
+                .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
         return "Basic " + encoded;
     }
 }

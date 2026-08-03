@@ -179,6 +179,47 @@ public class GlobalExceptionHandler {
 
         return problemResponse(errorCode, ErrorResponse.of(errorCode, request));
     }
+    /**
+     * Toss Payments 등 RestClient 통신 과정에서 외부 API가 에러(4xx, 5xx)를 반환했을 때 처리
+     */
+    @ExceptionHandler(org.springframework.web.client.RestClientResponseException.class)
+    public ResponseEntity<ErrorResponse> handleRestClientResponseException(
+            org.springframework.web.client.RestClientResponseException exception,
+            HttpServletRequest request) {
+
+        log.error(
+                "외부 API 연동 에러 발생. status={}, body={}, method={}, path={}",
+                exception.getStatusCode(),
+                exception.getResponseBodyAsString(),
+                request.getMethod(),
+                request.getRequestURI()
+        );
+
+        ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR; // 또는 외부 연동 전용 에러코드(HttpStatus.BAD_GATEWAY)
+
+        return problemResponse(errorCode, ErrorResponse.of(errorCode, "외부 결제 연동 중 오류가 발생했습니다.", request));
+    }
+
+    /**
+     * 인증 실패 예외 (Unauthenticated - 401)
+     */
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            org.springframework.security.core.AuthenticationException exception,
+            HttpServletRequest request) {
+
+        log.warn(
+                "인증 실패. method={}, path={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception.getMessage()
+        );
+
+        ErrorCode errorCode = CommonErrorCode.UNAUTHORIZED; // CommonErrorCode에 UNAUTHORIZED(401)가 있다고 가정
+
+        return problemResponse(errorCode, ErrorResponse.of(errorCode, request));
+    }
+
 
     // 검증 실패 목록을 포함하는 에러 응답을 생성
     private ResponseEntity<ErrorResponse> validationErrorResponse(ErrorCode errorCode,

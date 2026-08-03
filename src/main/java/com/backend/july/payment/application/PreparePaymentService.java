@@ -11,7 +11,6 @@ import com.backend.july.payment.exception.PaymentErrorCode;
 import com.backend.july.payment.exception.PaymentException;
 import com.backend.july.payment.infrastructure.PaymentRepository;
 import com.backend.july.payment.presentation.dto.response.PreparePaymentResponse;
-import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -127,19 +126,12 @@ public class PreparePaymentService {
     private String createOrderName(
             PurchaseOrder order
     ) {
-        OrderItem firstOrderItem =
-                order.getOrderItems()
-                        .stream()
-                        .findFirst()
-                        .orElseThrow(() ->
-                                new OrderException(
-                                        OrderErrorCode
-                                                .ORDER_ITEMS_EMPTY
-                                )
-                        );
+        OrderItem firstOrderItem = order.getOrderItems()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_ITEMS_EMPTY));
 
-        int additionalCount =
-                order.getOrderItems().size() - 1;
+        int additionalCount = order.getOrderItems().size() - 1;
 
         if (additionalCount <= 0) {
             return firstOrderItem.getProductName();

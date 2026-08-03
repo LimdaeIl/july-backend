@@ -61,16 +61,10 @@ public class Payment {
     @Column(name = "status", nullable = false, length = 30)
     private PaymentStatus status;
 
-    @Column(
-            name = "failure_reason",
-            length = REASON_MAX_LENGTH
-    )
+    @Column(name = "failure_reason", length = REASON_MAX_LENGTH)
     private String failureReason;
 
-    @Column(
-            name = "cancellation_reason",
-            length = REASON_MAX_LENGTH
-    )
+    @Column(name = "cancellation_reason", length = REASON_MAX_LENGTH)
     private String cancellationReason;
 
     @Column(name = "approved_at")
@@ -220,15 +214,12 @@ public class Payment {
         }
     }
 
-    private static String validateFailureReason(
-            String failureReason
-    ) {
+    private static String validateFailureReason(String failureReason) {
         if (failureReason == null || failureReason.isBlank()) {
             throw new PaymentException(PaymentErrorCode.FAILURE_REASON_REQUIRED);
         }
 
-        String trimmedFailureReason =
-                failureReason.trim();
+        String trimmedFailureReason = failureReason.trim();
 
         if (trimmedFailureReason.length() > REASON_MAX_LENGTH) {
             throw new PaymentException(PaymentErrorCode.INVALID_FAILURE_REASON);

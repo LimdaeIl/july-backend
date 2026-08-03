@@ -5,8 +5,11 @@ import com.backend.july.order.domain.OrderStatus;
 import com.backend.july.order.domain.PurchaseOrder;
 import com.backend.july.order.infrastructure.PurchaseOrderRepository;
 import com.backend.july.order.presentation.dto.response.OrderSummaryResponse;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -44,16 +47,18 @@ public class GetOrdersService {
          * 주문 ID 조회와 OrderItem fetch join 조회를 분리한다.
          * 컬렉션 fetch join에 직접 페이징을 적용하는 문제를 방지한다.
          */
-        List<PurchaseOrder> orders = purchaseOrderRepository.findAllWithItemsByIdIn(
-                contentOrderIds);
+        List<PurchaseOrder> orders = purchaseOrderRepository.findAllWithItemsByIdIn(contentOrderIds);
 
         /*
-         * IN 절의 결과 순서는 보장되지 않으므로
-         * 최초 커서 조회 기준과 동일하게 재정렬한다.
+         * IN 절 조회 결과는 순서가 보장되지 않으므로,
+         * ID를 Key로 Map을 만든 뒤 contentOrderIds 순서대로 재정렬한다.
          */
-        orders.sort(Comparator.comparing(PurchaseOrder::getId).reversed());
+        Map<Long, PurchaseOrder> orderMap = orders.stream()
+                .collect(Collectors.toMap(PurchaseOrder::getId, Function.identity()));
 
-        List<OrderSummaryResponse> content = orders.stream()
+        List<OrderSummaryResponse> content = contentOrderIds.stream()
+                .map(orderMap::get)
+                .filter(Objects::nonNull) // null 안전 처리
                 .map(OrderSummaryResponse::from)
                 .toList();
 
