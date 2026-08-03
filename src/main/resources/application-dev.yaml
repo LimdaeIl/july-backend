@@ -65,3 +65,8 @@ springdoc:
 
   paths-to-match:
     - /api/**
+
+toss:
+  payments:
+    secret-key: ${TOSS_PAYMENTS_SECRET_KEY}
+    api-url: https://api.tosspayments.com

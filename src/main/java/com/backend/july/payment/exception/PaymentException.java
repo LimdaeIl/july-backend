@@ -9,10 +9,7 @@ public class PaymentException extends CommonException {
         super(errorCode);
     }
 
-    public PaymentException(
-            ErrorCode errorCode,
-            Object... arguments
-    ) {
+    public PaymentException(ErrorCode errorCode, Object... arguments) {
         super(errorCode, arguments);
     }
 }

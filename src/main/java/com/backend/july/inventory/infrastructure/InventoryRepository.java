@@ -20,13 +20,14 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-            SELECT i
-            FROM Inventory i
-            JOIN FETCH i.product
-            WHERE i.product.id = :productId
+            select i
+            from Inventory i
+            join fetch i.product p
+            where p.id in :productIds
+            order by p.id
             """)
-    Optional<Inventory> findByProductIdForUpdate(
-            @Param("productId") Long productId
+    List<Inventory> findAllByProductIdsForUpdate(
+            @Param("productIds") Collection<Long> productIds
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
