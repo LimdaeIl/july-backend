@@ -17,10 +17,10 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatusCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientResponseException;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class ConfirmPaymentService {
@@ -31,16 +31,24 @@ public class ConfirmPaymentService {
     private final PaymentRepository paymentRepository;
     private final TossPaymentsClient tossPaymentsClient;
     private final PaymentFailureRecorder paymentFailureRecorder;
-    private final PaymentConfirmProcessor paymentConfirmProcessor; // 추가
+    private final PaymentConfirmProcessor paymentConfirmProcessor;
     private final Clock clock;
 
-    // @Transactional 제거: 외부 HTTP 통신 중 DB 커넥션 점유 방지
     public ConfirmPaymentResponse confirm(
             Long memberId,
             ConfirmPaymentRequest request
     ) {
         // 1. 사전 검증 및 조회 (Non-Transactional Read)
         PurchaseOrder order = findOrder(request.orderId());
+
+        log.info(
+                "결제 승인 사전 검증 - orderId={}, orderNumber={}, orderStatus={}, amount={}",
+                order.getId(),
+                order.getOrderNumber(),
+                order.getStatus(),
+                order.getTotalAmount()
+        );
+
         validateOrderOwner(order, memberId);
         order.validatePayable(LocalDateTime.now(clock));
         validateRequestedAmount(order, request);
@@ -59,17 +67,15 @@ public class ConfirmPaymentService {
 
         LocalDateTime approvedAt = convertToServiceTime(tossResponse.approvedAt());
 
-        // 4. 승인 결과 DB 반영 (Transactional)
+        // 4. 승인 결과 DB 반영 (Transactional - ID만 넘겨서 새로 조회 후 반영)
         return paymentConfirmProcessor.processApproval(
-                payment,
-                order,
+                payment.getId(),
+                order.getId(),
                 tossResponse.paymentKey(),
                 approvedAt
         );
     }
 
-
-    // 서비스 내부에서는 try-catch가 거의 사라짐
     private TossPaymentResponse requestTossConfirmation(Payment payment, ConfirmPaymentRequest request) {
         try {
             return tossPaymentsClient.confirm(
@@ -78,45 +84,12 @@ public class ConfirmPaymentService {
                     request.amount()
             );
         } catch (PaymentException exception) {
-            // 4xx 실패일 때만 기록 남기기
+            // 4xx 실패일 때만 DB에 실패 기록 남기기 (RequiresNew 적용되어 있음)
             if (exception.getErrorCode() == PaymentErrorCode.TOSS_PAYMENT_CONFIRM_FAILED) {
                 paymentFailureRecorder.record(payment.getId(), "토스 결제 승인 실패");
             }
-            throw exception; // 예외 재던지기
+            throw exception;
         }
-    }
-
-    private TossPaymentResponse handleTossResponseException(
-            Payment payment,
-            RestClientResponseException exception
-    ) {
-        HttpStatusCode statusCode = exception.getStatusCode();
-
-        if (statusCode.is4xxClientError()) {
-            // 4xx는 트랜잭션 밖이므로 DB 기록이 롤백될 위험 없이 잘 기록됨
-            paymentFailureRecorder.record(
-                    payment.getId(),
-                    createTossFailureReason(exception)
-            );
-
-            throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_CONFIRM_FAILED);
-        }
-
-        throw new PaymentException(PaymentErrorCode.TOSS_PAYMENT_CONFIRM_UNCERTAIN);
-    }
-
-    private String createTossFailureReason(RestClientResponseException exception) {
-        String responseBody = exception.getResponseBodyAsString();
-        if (!responseBody.isBlank()) {
-            return responseBody;
-        }
-
-        String statusText = exception.getStatusText();
-        if (!statusText.isBlank()) {
-            return statusText;
-        }
-
-        return "토스 결제 승인 요청이 거절되었습니다.";
     }
 
     private PurchaseOrder findOrder(String orderNumber) {
@@ -137,10 +110,8 @@ public class ConfirmPaymentService {
     }
 
     private Payment findReadyPayment(Long orderId) {
-        return paymentRepository.findFirstByOrderIdAndStatusOrderByIdDesc(orderId,
-                        PaymentStatus.READY)
-                .orElseThrow(
-                        () -> new PaymentException(PaymentErrorCode.PAYMENT_PREPARATION_NOT_FOUND));
+        return paymentRepository.findFirstByOrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.READY)
+                .orElseThrow(() -> new PaymentException(PaymentErrorCode.PAYMENT_PREPARATION_NOT_FOUND));
     }
 
     private void validatePaymentMatchesOrder(Payment payment, PurchaseOrder order) {

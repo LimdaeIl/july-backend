@@ -1,5 +1,6 @@
 package com.backend.july.payment.domain;
 
+import com.backend.july.common.audit.BaseAuditEntity;
 import com.backend.july.order.domain.PurchaseOrder;
 import com.backend.july.payment.exception.PaymentErrorCode;
 import com.backend.july.payment.exception.PaymentException;
@@ -33,7 +34,7 @@ import lombok.NoArgsConstructor;
         }
 )
 @Entity
-public class Payment {
+public class Payment extends BaseAuditEntity {
 
     private static final int PAYMENT_KEY_MAX_LENGTH = 200;
     private static final int REASON_MAX_LENGTH = 500;
