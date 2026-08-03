@@ -18,7 +18,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.Instant;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 
 @Tag(
@@ -33,8 +32,11 @@ public interface ProductControllerDocs {
                     상품 목록을 페이지 기반으로 조회합니다.
 
                     판매자 ID를 전달하면 해당 판매자가 등록한 상품만 조회합니다.
+                    검색어를 전달하면 상품명에 검색어가 포함된 상품만 조회합니다.
                     정렬 기준을 지정하지 않으면 최신 등록순으로 조회합니다.
-                    페이지 번호는 0부터 시작하며, 한 페이지에서 최대 100개의 상품을 조회할 수 있습니다.
+
+                    페이지 번호는 0부터 시작하며,
+                    한 페이지에서 최대 100개의 상품을 조회할 수 있습니다.
                     """
     )
     @ApiResponses({
@@ -44,7 +46,7 @@ public interface ProductControllerDocs {
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "400",
-                    description = "페이지 번호, 페이지 크기 또는 정렬 조건이 유효하지 않음"
+                    description = "판매자 ID, 페이지 번호, 페이지 크기 또는 정렬 조건이 유효하지 않음"
             )
     })
     ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> getProductsByPage(
@@ -57,8 +59,16 @@ public interface ProductControllerDocs {
             Long sellerId,
 
             @Parameter(
+                    name = "keyword",
+                    description = "상품명 검색어입니다. 전달하지 않으면 검색 조건을 적용하지 않습니다.",
+                    in = ParameterIn.QUERY,
+                    example = "키보드"
+            )
+            String keyword,
+
+            @Parameter(
                     name = "sortType",
-                    description = "상품 목록 정렬 기준입니다.",
+                    description = "상품 목록 정렬 기준입니다. 기본값은 LATEST입니다.",
                     in = ParameterIn.QUERY,
                     example = "LATEST"
             )
@@ -90,11 +100,18 @@ public interface ProductControllerDocs {
                     상품 목록을 커서 기반으로 조회합니다.
 
                     판매자 ID를 전달하면 해당 판매자가 등록한 상품만 조회합니다.
-                    최초 조회 시 커서 값을 전달하지 않으며, 다음 조회부터 이전 응답에 포함된 커서 정보를 전달합니다.
+                    최초 조회 시에는 커서 값을 전달하지 않습니다.
 
-                    정렬 기준에 따라 사용하는 커서 값이 달라질 수 있습니다.
-                    최신순 정렬에서는 상품 ID와 생성 시각을 사용하고,
-                    가격순 정렬에서는 상품 ID와 가격을 커서로 사용할 수 있습니다.
+                    다음 조회부터는 이전 응답에 포함된 커서 정보를
+                    동일한 정렬 기준과 함께 전달합니다.
+
+                    최신순 정렬:
+                    - cursorId
+                    - cursorCreatedAt
+
+                    가격순 정렬:
+                    - cursorId
+                    - cursorPrice
                     """
     )
     @ApiResponses({
@@ -104,7 +121,7 @@ public interface ProductControllerDocs {
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "400",
-                    description = "커서, 조회 크기 또는 정렬 조건이 유효하지 않음"
+                    description = "판매자 ID, 커서, 조회 크기 또는 정렬 조건이 유효하지 않음"
             )
     })
     ResponseEntity<ApiResponse<CursorResponse<ProductSummaryResponse, ProductCursor>>> getProductsByCursor(
@@ -140,7 +157,6 @@ public interface ProductControllerDocs {
                     in = ParameterIn.QUERY,
                     example = "2026-07-21T03:00:00Z"
             )
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             Instant cursorCreatedAt,
 
             @Parameter(

@@ -41,6 +41,9 @@ public class ProductController implements ProductControllerDocs {
             @RequestParam(required = false)
             Long sellerId,
 
+            @RequestParam(required = false)
+            String keyword,
+
             @RequestParam(defaultValue = "LATEST")
             ProductSortType sortType,
 
@@ -55,13 +58,14 @@ public class ProductController implements ProductControllerDocs {
     ) {
         GetProductsCondition condition = new GetProductsCondition(
                 sellerId,
+                keyword,
                 sortType,
                 page,
                 size
         );
 
-        PageResponse<ProductSummaryResponse> response = getProductsService.getProductsByPage(
-                condition);
+        PageResponse<ProductSummaryResponse> response =
+                getProductsService.getProductsByPage(condition);
 
         return ResponseEntity.ok(
                 ApiResponse.ok(
@@ -89,7 +93,11 @@ public class ProductController implements ProductControllerDocs {
             Instant cursorCreatedAt,
 
             @RequestParam(required = false)
-            @DecimalMin(value = "0", inclusive = true, message = "상품 목록 조회: 커서 가격은 0 이상이어야 합니다.")
+            @DecimalMin(
+                    value = "0",
+                    inclusive = true,
+                    message = "상품 목록 조회: 커서 가격은 0 이상이어야 합니다."
+            )
             BigDecimal cursorPrice,
 
             @RequestParam(defaultValue = "20")
@@ -97,18 +105,17 @@ public class ProductController implements ProductControllerDocs {
             @Max(value = 100, message = "상품 목록 조회: 조회 크기는 100 이하여야 합니다.")
             int size
     ) {
-        GetProductsCursorCondition condition =
-                new GetProductsCursorCondition(
-                        sellerId,
-                        sortType,
-                        cursorId,
-                        cursorCreatedAt,
-                        cursorPrice,
-                        size
-                );
+        GetProductsCursorCondition condition = new GetProductsCursorCondition(
+                sellerId,
+                sortType,
+                cursorId,
+                cursorCreatedAt,
+                cursorPrice,
+                size
+        );
 
-        CursorResponse<ProductSummaryResponse, ProductCursor> response = getProductsService.getProductsByCursor(
-                condition);
+        CursorResponse<ProductSummaryResponse, ProductCursor> response =
+                getProductsService.getProductsByCursor(condition);
 
         return ResponseEntity.ok(
                 ApiResponse.ok(
@@ -120,7 +127,9 @@ public class ProductController implements ProductControllerDocs {
 
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductDetailResponse>> getProduct(
-            @PathVariable @Positive(message = "상품 상세 조회: 상품 ID는 양수여야 합니다.") Long productId
+            @PathVariable
+            @Positive(message = "상품 상세 조회: 상품 ID는 양수여야 합니다.")
+            Long productId
     ) {
         ProductDetailResponse response = getProductService.getProduct(productId);
 
