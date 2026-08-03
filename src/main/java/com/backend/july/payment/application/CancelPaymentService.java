@@ -36,8 +36,8 @@ public class CancelPaymentService {
     ) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "결제를 찾을 수 없습니다."
+                        new com.backend.july.payment.exception.PaymentException(
+                                com.backend.july.payment.exception.PaymentErrorCode.PAYMENT_NOT_FOUND
                         )
                 );
 
