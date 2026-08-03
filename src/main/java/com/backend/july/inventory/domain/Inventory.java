@@ -6,6 +6,7 @@ import com.backend.july.product.domain.Product;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +24,7 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "v1_inventories",
         indexes = {
-                @Index(name = "idx_inventory_product_id", columnList = "product_id", unique = true)}
+                @Index(name = "uk_inventory_product_id", columnList = "product_id", unique = true)}
 )
 @Entity
 public class Inventory {
@@ -33,7 +34,7 @@ public class Inventory {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @JoinColumn(name = "product_id", nullable = false, foreignKey = @ForeignKey(name = "fk_inventory_product"))
     private Product product;
 
     @Column(nullable = false)
