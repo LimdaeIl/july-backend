@@ -27,7 +27,7 @@ public class CancelPaymentService {
     private final PaymentRepository paymentRepository;
     private final InventoryRepository inventoryRepository;
     private final TossPaymentsClient tossPaymentsClient;
-
+    private final java.time.Clock clock;
     @Transactional
     public void cancel(
             Long memberId,
