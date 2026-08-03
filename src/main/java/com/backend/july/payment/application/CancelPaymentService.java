@@ -46,8 +46,8 @@ public class CancelPaymentService {
         order.validateOwner(memberId);
 
         if (!payment.isApproved()) {
-            throw new IllegalStateException(
-                    "승인된 결제만 취소할 수 있습니다."
+            throw new com.backend.july.payment.exception.PaymentException(
+                    com.backend.july.payment.exception.PaymentErrorCode.INVALID_PAYMENT_STATUS
             );
         }
 
