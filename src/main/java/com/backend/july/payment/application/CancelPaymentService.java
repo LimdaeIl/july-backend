@@ -63,6 +63,12 @@ public class CancelPaymentService {
                         cancelReason
                 );
 
+        if (tossResponse == null || tossResponse.status() == null) {
+            throw new com.backend.july.payment.exception.PaymentException(
+                    com.backend.july.payment.exception.PaymentErrorCode.TOSS_PAYMENT_INVALID_RESPONSE
+            );
+        }
+
         if (!TOSS_CANCELLED_STATUS.equals(
                 tossResponse.status()
         )) {
