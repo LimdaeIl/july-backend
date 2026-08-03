@@ -251,17 +251,26 @@ public class PurchaseOrder extends BaseAuditEntity {
     /**
      * 결제를 수행할 수 있는 주문인지 검증한다.
      */
-    public void validatePayable(LocalDateTime now) {
-        validateCurrentTime(now);
-        validatePendingPaymentStatus();
+    public void validatePayable(
+            LocalDateTime now
+    ) {
+        if (now == null) {
+            throw new OrderException(
+                    OrderErrorCode.NOW_REQUIRED
+            );
+        }
+
+        if (!isPendingPayment()) {
+            throw new OrderException(
+                    OrderErrorCode.INVALID_ORDER_STATUS
+            );
+        }
 
         if (isExpired(now)) {
             throw new OrderException(
                     OrderErrorCode.ORDER_EXPIRED
             );
         }
-
-        validateOrderReady();
     }
 
     private void calculateTotalAmount() {
